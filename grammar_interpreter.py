@@ -45,6 +45,7 @@ class push_down_automata:
             elif symbol == data[token][1]:
                 token += 1
             else:
+                print(f"Error, expected {symbol}, found {data[token][1]}")
                 return False
         
         #Successfully traveled the base production and token list

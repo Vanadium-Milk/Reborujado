@@ -1,1 +1,9 @@
-dizque ( 5 > 3 ) tonces { disir ( 2 ) } $
+dizque ( ( 3 > 3 ) aparte sicierto ) tonces {
+    completiao edad = 13 ;
+}
+perosi ( 15 == 1 osino ( ( 1 + 2 ) > 3 ) ) tonces {
+    ondes ( 3 ) {
+        disir ( 2 ) ;
+        disir ( 5 ) ;
+    }
+} $

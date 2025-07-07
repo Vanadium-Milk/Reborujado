@@ -18,13 +18,13 @@ class deterministic_automata:
         self.alphabet = alphabet
         self.terminal_states = terminal_states
 
-    def tokenize(self, expresion: str, delimiter: str) -> list[list[str]]:
+    def tokenize(self, expresion: str, delimiters: list[str]) -> list[list[str]]:
         
         #Array with the resulting evaluated tokens
         tokens = []
 
         #Just to finish the sentence
-        expresion += delimiter
+        expresion += delimiters[0]
 
         #Pointers
         state = 0
@@ -43,13 +43,14 @@ class deterministic_automata:
                     #Change to the state change in last column
                     next = self.transition_table[state][-1]
 
+
                 if next in self.terminal_states:
                     #Terminal state, end token
                     terminal = True
                 else:
                     state = next
 
-            if char == delimiter:
+            if char in delimiters:
                 #Add token to the list
                 if terminal:
                     tokens.append([read, self.terminal_states[next]])
@@ -59,6 +60,7 @@ class deterministic_automata:
                 read = ''
                 terminal = False
                 next = 0
+
             else:
                 #transcribe expresions
                 read += char

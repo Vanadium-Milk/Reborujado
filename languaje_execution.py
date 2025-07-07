@@ -1,3 +1,7 @@
+symbols = [
+]
+
+
 def conditional (arguments):
     print("if")
     
@@ -21,3 +25,14 @@ def define_function(identifier, parameters, body):
 
 def for_loop (iterator, condition, change, body):
     pass
+
+def define_int(arguments):
+    print("int")
+    print(arguments)
+
+def define_string(arguments):
+    pass
+
+def define_float(arguments):
+    print("float")
+    print(arguments)

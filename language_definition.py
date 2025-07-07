@@ -47,9 +47,11 @@ RESERVED_TOKENS = {
     "patodos": 41,
     "++": 42,
     "--": 43,
-    "$": 44,
+    "enfierrar": 44,
+    "$": 45,
     "tonces": None,
-    "{": None
+    "{": None,
+    "=": None,
 }
 
 LANGUAGE_FUNCTIONS = {
@@ -60,18 +62,23 @@ LANGUAGE_FUNCTIONS = {
     "fonear": le.call_function,
     "chamba": le.define_function,
     "patodos": le.for_loop,
+    "completiao": le.define_int,
+    "mochao": le.define_float,
+    "mecate": le.define_string
 }
 
 token_reader = ad.deterministic_automata(
     [
-        [1, 6, 200, 4, 2, 200, 200],
-        [1, 201, 3, 201, 201, 101, 201],
-        [1, 201, 201, 201, 201, 201, 201],
-        [7, 202, 202, 202, 202, 202, 202],
-        [203, 4, 4, 5, 4, 4, 4],
-        [203, 203, 203, 203, 203, 103, 203],
-        [6, 6, 200, 200, 200, 100, 200],
-        [7, 202, 202,202, 202, 102, 202]
+        [1, 6, 200, 4, 2, 8, 0, 200],
+        [1, 201, 3, 201, 201, 201, 101, 201],
+        [1, 201, 201, 201, 201, 9, 104, 201],
+        [7, 202, 202, 202, 202, 202, 202, 202],
+        [4, 4, 4, 5, 4, 4, 4, 4],
+        [203, 203, 203, 203, 203, 203, 103, 203],
+        [6, 6, 200, 200, 200, 200, 100, 200],
+        [7, 202, 202, 202, 202, 202, 102, 202],
+        [200, 200, 200, 200, 200, 9, 104, 200],
+        [200, 200, 200, 200, 200, 200, 104, 200]
     ],
     {
         '0': 0,
@@ -139,15 +146,30 @@ token_reader = ad.deterministic_automata(
         '.': 2,
         '"': 3,
         '-': 4,
+        '/': 5,
+        '*': 5,
+        ';': 5,
+        '(': 5,
+        ')': 5,
+        '=': 5,
+        '+': 5,
+        '!': 5,
+        '>': 5,
+        '<': 5,
+        '{': 5,
+        '}': 5,
+        ',': 5,
+        '$': 5,
         #Delimiters
-        ' ' : 5,
-        '\n' : 5,
+        ' ' : 6,
+        '\n' : 6,
     },
     {
-        100: 'reservado',
+        100: 'id',
         101: 'entero',
         102: 'flotante',
         103: 'cadena',
+        104: 'operando',
         200: 'no reconocido',
         201: 'entero malformado',
         202: 'flotante malformado',
@@ -189,16 +211,16 @@ grammar_read = gi.push_down_automata({
         ["EMPEZAR"], #0
         ["SENTENCIA"], #1
         ["COMENTARIO"], #2
-        ["/*", "ANY", "*/"], #3
-        ["//", "ANY"], #4
-        ["DECLARACION", ";"], #5
-        ["IF"], #6
-        ["WHILE"], #7
-        ["DOWHILE"], #8
-        ["SWITCH"], #9
-        ["ASIGNACION", ";"], #10
-        ["FUNC", ";"], #11
-        ["FUNCIONDEF"], #12
+        ["/*", "ANY", "*/", "EMPEZAR"], #3
+        ["//", "ANY", "EMPEZAR"], #4
+        ["DECLARACION", ";", "EMPEZAR"], #5
+        ["IF", "EMPEZAR"], #6
+        ["WHILE", "EMPEZAR"], #7
+        ["DOWHILE", "EMPEZAR"], #8
+        ["SWITCH", "EMPEZAR"], #9
+        ["ASIGNACION", ";", "EMPEZAR"], #10
+        ["FUNC", ";", "EMPEZAR"], #11
+        ["FUNCIONDEF",  "EMPEZAR"], #12
         ["DATO", "INICIALIZACION"], #13
         ["completiao"], #14
         ["mochao"], #15
@@ -213,7 +235,7 @@ grammar_read = gi.push_down_automata({
         ["FUNC"], #24
         ["BOOLEANO"], #25
         ["id"], #26
-        ["(", "VALOR", ")"], #27
+        ["(", "VALOR", "OPERACION", "COMPARACION", ")"], #27
         ["voltiao", "VALOR"], #28
         ["sicierto"], #29
         ["nosierto"], #30
@@ -231,22 +253,22 @@ grammar_read = gi.push_down_automata({
         [">", "VALOR", "OPERACION"], #42
         ["<", "VALOR", "OPERACION"], #43
         [], #44
-        ["dizque", "(", "VALOR", "OPERACION", "COMPARACION", ")", "tonces", "{", "SENTENCIA", "}", "IFOPCIONAL", "ELSE"], #45
-        ["perosi", "(", "VALOR", "OPERACION", "COMPARACION", ")", "tonces", "{", "SENTENCIA", "}", "IFOPCIONAL"], #46
+        ["dizque", "(", "VALOR", "OPERACION", "COMPARACION", ")", "tonces", "{", "EMPEZAR", "}", "IFOPCIONAL", "ELSE"], #45
+        ["perosi", "(", "VALOR", "OPERACION", "COMPARACION", ")", "tonces", "{", "EMPEZAR", "}", "IFOPCIONAL"], #46
         [], #47
-        ["pasino", "{", "SENTENCIA", "}"], #48
+        ["pasino", "{", "EMPEZAR", "}"], #48
         [], #49
-        ["chequear", "(", "VALOR", ")", "{", "pal", "VALOR", "{", "SENTENCIA", "}", "CASO", "}", "DEFAULT"], #50
-        ["pal", "VALOR", "{", "SENTENCIA", "}", "CASO"], #51
+        ["chequear", "(", "VALOR", ")", "{", "pal", "VALOR", "{", "EMPEZAR", "}", "CASO", "}", "DEFAULT"], #50
+        ["pal", "VALOR", "{", "EMPEZAR", "}", "CASO"], #51
         [], #52
-        ["nomasno", "{", "SENTENCIA", "}"], #53
+        ["nomasno", "{", "EMPEZAR", "}"], #53
         [], #54
-        ["patodos", "(", "VALOR", "OPERACION", ",", "VALOR", "OPERACION", "COMPARACION", ",", "id", "CAMBIADOR", ")", "{", "SENTENCIA", "}"], #55
+        ["patodos", "(", "VALOR", "OPERACION", ",", "VALOR", "OPERACION", "COMPARACION", ",", "id", "CAMBIADOR", ")", "{", "EMPEZAR", "}"], #55
         ["++"], #56
         ["--"], #57
-        ["ondes", "(", "VALOR", "OPERACION", "COMPARACION", ")", "{", "SENTENCIA", "}"], #58
-        ["hacer", "{", "SENTENCIA", "}", "ondes", "(", "VALOR", "OPERACION", "COMPARACION", ")",], #59
-        ["chamba", "id", "(", "PARAMS", ")", "{", "SENTENCIA", "regresar", "VALOR", "OPERACION", "COMPARACION", ";"], #60
+        ["ondes", "(", "VALOR", "OPERACION", "COMPARACION", ")", "{", "EMPEZAR", "}"], #58
+        ["hacer", "{", "EMPEZAR", "}", "ondes", "(", "VALOR", "OPERACION", "COMPARACION", ")",], #59
+        ["chamba", "id", "(", "PARAMS", ")", "{", "EMPEZAR", "regresar", "VALOR", "OPERACION", "COMPARACION", ";"], #60
         ["DATO", "id", "PARAMSMULTIPLE"], #61
         [], #62
         [",", "DATO", "id", "PARAMSMULTIPLE"], #63
@@ -256,82 +278,84 @@ grammar_read = gi.push_down_automata({
         [",", "VALOR", "OPERACION", "COMPARACION", "MULTIPLE"], #67
         [], #68
         ["fonear", "id", "(", "ARG", ")"], #69
-        ["disir", "(", "VALOR", "OPERACION", "COMPARACION", ")"], #70
+        ["disir", "(", "VALOR", "OPERACION", "COMPARACION", ")", ";", "EMPEZAR"], #70
+        [], #71
+        ["enfierrar", "VALOR", "OPERACION", "COMPARACION", ";"], #72
+        [], #73
+        ["FOR", "EMPEZAR"] #74
     ],
     [
-        [1,1,1,1,1,1,None,1,1,1,None,2,2,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,1,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None,None,None,3,4,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [5,5,5,5,6,7,8,9,10,11,12,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,70,None,None,None,None,None],
-        [13,13,13,13,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None, None],
-        [14,15,16,17,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None, None],
-        [None,None,None,None,None,None,None,None,19,None,None,None,None,18,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None, 18],
-        [None,None,None,None,None,None,None,None,20,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,26,24,None,None,None,None,21,22,23,25,25,27,28,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,29,30,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,37,None,None,None,None,None,None,None,31,32,33,34,35,36,37,37,37,37,37,37,37,None,None,None,None,None,None,37,None,None,None,37],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,44,None,None,None,None,None,None,None,None,None,None,None,None,None,44,38,39,40,41,42,43,None,None,None,None,None,None,44,None,None,None,44],
-        [None,None,None,None,45,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,46,47,None,None,None,None,None,None,None,None,47],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,48,None,None,None,None,None,None,None,None, 49],
-        [None,None,None,None,None,None,None,50,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,52,51,None,None,None,None,None,None, 52],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,53,None,None,None,None,None, 54],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,55,None,None,None],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,56,57,None],
-        [None,None,None,None,None,58,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,59,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None,None,60,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [61,61,61,61,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,62,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,62],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,64,None,None,None,None,None,None,None,None,None,None,None,None,64,None,None,None,64],
-        [None,None,None,None,None,None,None,None,65,65,None,None,None,None,65,65,65,65,65,65,65,None,None,None,None,None,None,66,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,66],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,68,None,None,None,None,None,None,None,None,None,None,None,None,67,None,None,None,68],
-        [None,None,None,None,None,None,None,None,None,69,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
+        [1,1,1,1,1,1,1,1,1,1,1,2,2,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,71,None,None,1,None,1,None,None,71,71],
+        [None,None,None,None,None,None,None,None,None,None,None,3,4,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [5,5,5,5,6,7,8,9,10,11,12,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,70,None,74,None,None,None,None],
+        [13,13,13,13,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [14,15,16,17,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,19,None,None,None,None,18,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,18],
+        [None,None,None,None,None,None,None,None,20,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,26,24,None,None,None,None,21,22,23,25,25,27,28,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,29,30,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,37,None,None,None,None,None,None,None,31,32,33,34,35,36,37,37,37,37,37,37,37,None,None,None,None,None,None,37,None,None,None,None,37],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,44,None,None,None,None,None,None,None,None,None,None,None,None,None,44,38,39,40,41,42,43,None,None,None,None,None,None,44,None,None,None,None,44],
+        [None,None,None,None,45,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [47,47,47,47,47,47,47,47,47,47,47,47,47,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,46,47,47,None,None,47,None,47,None,None,47,47],
+        [49,49,49,49,49,49,49,49,49,49,49,49,49,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,48,49,None,None,49,None,49,None,None,49,49],
+        [None,None,None,None,None,None,None,50,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,52,51,None,None,None,None,None,None,None,52],
+        [54,54,54,54,54,54,54,54,54,54,54,54,54,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,53,54,None,54,None,None,54,54],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,55,None,None,None,None],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,56,57,None,None],
+        [None,None,None,None,None,58,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [None,None,None,None,None,None,59,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,None,None,60,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [61,61,61,61,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,62,None,None,None,None,None,None,None,62,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,62],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,64,None,None,None,None,None,None,None,None,None,None,None,None,63,None,None,None,None,64],
+        [None,None,None,None,None,None,None,None,65,65,None,None,None,None,65,65,65,65,65,65,65,None,None,None,None,None,None,66,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,66],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,68,None,None,None,None,None,None,None,None,None,None,None,None,67,None,None,None,None,68],
+        [None,None,None,None,None,None,None,None,None,69,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,73,None,None,None,None,None,None,None,72,73]
     ]
 )
 
 #File with rover commands
-input_file = open("input.txt","r").readlines()
+input_file = open("input.txt","r").read()
 
 
 commands = []
-for line in input_file:
-    if line[-1] == "\n":
-        line = line[:-1]
-    tokenized = token_reader.tokenize(line, " ")
+tokenized = token_reader.tokenize(input_file, [" ", "\n"])
 
-    #Change tokens marked as "reserved tokens" to their actual reserved word
-    valid = True
-    for token in tokenized:
-        if token[1] == "reservado" or token[1] == "no reconocido":
-            if token[0] in RESERVED_TOKENS:
-                token[1] = token[0]
-            #elif token[0] in objects:
-            #    token[1] = "Object"
-            else:
-                valid = False
+#Change tokens marked as "reserved tokens" to their actual reserved word
+valid = True
+for token in tokenized:
 
-                #Exit or continue execution
-                selection = input(f"Error in line: {line}, {token[0]} is not recognized, continue and ignore command? (Y/N): ")
-                if selection == "Y" or selection == "y":
-                    continue
-                else:
-                    exit()
+    if token[1] == "no reconocido":
+        valid = False
 
-    #Validate grammar then proceed to execute command
-    if grammar_read.is_valid(tokenized):
-
-        command = tokenized[0][0]
-
-        arguments = [token[0] for token in tokenized[1:]]
-        #objMapped = [objects[arg] if arg in objects else arg for arg in arguments ]
-
-        commands.append([command, arguments])
-
-    else:
-        selection = input(f"Error in line: {line}, invalid sintax continue and ignore command? (Y/N): ")
-
-        if selection != "Y" and selection != "y":
+        #Exit or continue execution
+        selection = input(f"Error in line: , {token[0]} is not recognized, continue and ignore command? (Y/N): ")
+        if selection == "Y" or selection == "y":
+            continue
+        else:
             exit()
+        
+    else:
+        if token[0] in RESERVED_TOKENS:
+            token[1] = token[0]
+
+#Validate grammar then proceed to execute command
+if grammar_read.is_valid(tokenized):
+
+    command = tokenized[0][0]
+
+    arguments = [token[0] for token in tokenized[1:]]
+    #objMapped = [objects[arg] if arg in objects else arg for arg in arguments ]
+
+    commands.append([command, arguments])
+
+else:
+    selection = input(f"Error in line: , invalid sintax continue and ignore command? (Y/N): ")
+
+    if selection != "Y" and selection != "y":
+        exit()
 
 #Execute all commands in order
 for com in commands:
