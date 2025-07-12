@@ -1,9 +1,10 @@
 dizque ( ( 3 > 3 ) aparte sicierto ) tonces {
     completiao edad = 13 ;
+    mecate saludo = "Hola" ;
 }
 perosi ( 15 == 1 osino ( ( 1 + 2 ) > 3 ) ) tonces {
-    ondes ( 3 ) {
-        disir ( 2 ) ;
-        disir ( 5 ) ;
-    }
-} $
+    disir ( 2 ) ;
+    disir ( 5 ) ;
+}
+mochao dinero = 15.4 ;
+$

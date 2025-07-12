@@ -1,6 +1,53 @@
 import tokenizer as ad
 import grammar_interpreter as gi
 import languaje_execution as le
+import semantic_interpreter as si
+
+def conditional (tokens: list[list[str]]):
+    condition = [False, True]
+    sub_blocks = grammar_read.get_groups(tokens, 45, [75])
+
+    sentences = []
+    for block in sub_blocks:
+        sentences.append(pseudocompiler.extract_functions(block + [["$", "$"]]))
+
+    #Support multiple elif declarations by iterating
+    for i in range(len(sub_blocks)):
+        if condition[i]:
+            for func in sentences[i]:
+                func()
+            
+            break
+
+def while_loop (tokens: list[list[str]]):
+    pass
+
+def do_while_loop (tokens: list[list[str]]):
+    pass
+
+def switch (tokens: list[list[str]]):
+    pass
+
+def call_function (tokens: list[list[str]]):
+    pass
+
+def define_function(tokens: list[list[str]]):
+    pass
+
+def for_loop (tokens: list[list[str]]):
+    pass
+
+def define_int(tokens: list[list[str]]):
+    print("int")
+    print(tokens)
+
+def define_string(tokens: list[list[str]]):
+    print("string")
+    print(tokens)
+
+def define_float(tokens: list[list[str]]):
+    print("float")
+    print(tokens)
 
 RESERVED_TOKENS = {
     "completiao": 0,
@@ -52,19 +99,6 @@ RESERVED_TOKENS = {
     "tonces": None,
     "{": None,
     "=": None,
-}
-
-LANGUAGE_FUNCTIONS = {
-    "dizque": le.conditional,
-    "ondes": le.while_loop,
-    "hacer": le.do_while_loop,
-    "chequear": le.switch,
-    "fonear": le.call_function,
-    "chamba": le.define_function,
-    "patodos": le.for_loop,
-    "completiao": le.define_int,
-    "mochao": le.define_float,
-    "mecate": le.define_string
 }
 
 token_reader = ad.deterministic_automata(
@@ -204,7 +238,9 @@ grammar_read = gi.push_down_automata({
         "PARAMSMULTIPLE": 23,
         "ARG": 24,
         "MULTIPLE": 25,
-        "FUNC": 26
+        "FUNC": 26,
+        "RERTORNAR": 27,
+        "SUBCODIGO": 28
     },
     RESERVED_TOKENS,
     [
@@ -253,21 +289,21 @@ grammar_read = gi.push_down_automata({
         [">", "VALOR", "OPERACION"], #42
         ["<", "VALOR", "OPERACION"], #43
         [], #44
-        ["dizque", "(", "VALOR", "OPERACION", "COMPARACION", ")", "tonces", "{", "EMPEZAR", "}", "IFOPCIONAL", "ELSE"], #45
-        ["perosi", "(", "VALOR", "OPERACION", "COMPARACION", ")", "tonces", "{", "EMPEZAR", "}", "IFOPCIONAL"], #46
+        ["dizque", "(", "VALOR", "OPERACION", "COMPARACION", ")", "tonces", "{", "SUBCODIGO", "}", "IFOPCIONAL", "ELSE"], #45
+        ["perosi", "(", "VALOR", "OPERACION", "COMPARACION", ")", "tonces", "{", "SUBCODIGO", "}", "IFOPCIONAL"], #46
         [], #47
-        ["pasino", "{", "EMPEZAR", "}"], #48
+        ["pasino", "{", "SUBCODIGO", "}"], #48
         [], #49
-        ["chequear", "(", "VALOR", ")", "{", "pal", "VALOR", "{", "EMPEZAR", "}", "CASO", "}", "DEFAULT"], #50
-        ["pal", "VALOR", "{", "EMPEZAR", "}", "CASO"], #51
+        ["chequear", "(", "VALOR", ")", "{", "pal", "VALOR", "{", "SUBCODIGO", "}", "CASO", "}", "DEFAULT"], #50
+        ["pal", "VALOR", "{", "SUBCODIGO", "}", "CASO"], #51
         [], #52
-        ["nomasno", "{", "EMPEZAR", "}"], #53
+        ["nomasno", "{", "SUBCODIGO", "}"], #53
         [], #54
-        ["patodos", "(", "VALOR", "OPERACION", ",", "VALOR", "OPERACION", "COMPARACION", ",", "id", "CAMBIADOR", ")", "{", "EMPEZAR", "}"], #55
+        ["patodos", "(", "VALOR", "OPERACION", ",", "VALOR", "OPERACION", "COMPARACION", ",", "id", "CAMBIADOR", ")", "{", "SUBCODIGO", "}"], #55
         ["++"], #56
         ["--"], #57
-        ["ondes", "(", "VALOR", "OPERACION", "COMPARACION", ")", "{", "EMPEZAR", "}"], #58
-        ["hacer", "{", "EMPEZAR", "}", "ondes", "(", "VALOR", "OPERACION", "COMPARACION", ")",], #59
+        ["ondes", "(", "VALOR", "OPERACION", "COMPARACION", ")", "{", "SUBCODIGO", "}"], #58
+        ["hacer", "{", "SUBCODIGO", "}", "ondes", "(", "VALOR", "OPERACION", "COMPARACION", ")",], #59
         ["chamba", "id", "(", "PARAMS", ")", "{", "EMPEZAR", "regresar", "VALOR", "OPERACION", "COMPARACION", ";"], #60
         ["DATO", "id", "PARAMSMULTIPLE"], #61
         [], #62
@@ -282,7 +318,8 @@ grammar_read = gi.push_down_automata({
         [], #71
         ["enfierrar", "VALOR", "OPERACION", "COMPARACION", ";"], #72
         [], #73
-        ["FOR", "EMPEZAR"] #74
+        ["FOR", "EMPEZAR"], #74
+        ["EMPEZAR"] #75
     ],
     [
         [1,1,1,1,1,1,1,1,1,1,1,2,2,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,71,None,None,1,None,1,None,None,71,71],
@@ -312,51 +349,25 @@ grammar_read = gi.push_down_automata({
         [None,None,None,None,None,None,None,None,65,65,None,None,None,None,65,65,65,65,65,65,65,None,None,None,None,None,None,66,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,66],
         [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,68,None,None,None,None,None,None,None,None,None,None,None,None,67,None,None,None,None,68],
         [None,None,None,None,None,None,None,None,None,69,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,73,None,None,None,None,None,None,None,72,73]
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,73,None,None,None,None,None,None,None,72,73],
+        [75,75,75,75,75,75,75,75,75,75,75,75,75,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,75,None,None,75,None,75,None,None,75,75]
     ]
 )
 
-#File with rover commands
-input_file = open("input.txt","r").read()
-
-
-commands = []
-tokenized = token_reader.tokenize(input_file, [" ", "\n"])
-
-#Change tokens marked as "reserved tokens" to their actual reserved word
-valid = True
-for token in tokenized:
-
-    if token[1] == "no reconocido":
-        valid = False
-
-        #Exit or continue execution
-        selection = input(f"Error in line: , {token[0]} is not recognized, continue and ignore command? (Y/N): ")
-        if selection == "Y" or selection == "y":
-            continue
-        else:
-            exit()
-        
-    else:
-        if token[0] in RESERVED_TOKENS:
-            token[1] = token[0]
-
-#Validate grammar then proceed to execute command
-if grammar_read.is_valid(tokenized):
-
-    command = tokenized[0][0]
-
-    arguments = [token[0] for token in tokenized[1:]]
-    #objMapped = [objects[arg] if arg in objects else arg for arg in arguments ]
-
-    commands.append([command, arguments])
-
-else:
-    selection = input(f"Error in line: , invalid sintax continue and ignore command? (Y/N): ")
-
-    if selection != "Y" and selection != "y":
-        exit()
-
-#Execute all commands in order
-for com in commands:
-    LANGUAGE_FUNCTIONS[com[0]](com[1])
+pseudocompiler = si.semantics_interpreter(
+    grammar_read,
+    [45, 58, 59, 60, 50, 20, 69, 55, 13],
+    [],
+    {
+        "dizque": conditional,
+        "ondes": while_loop,
+        "hacer": do_while_loop,
+        "chequear": switch,
+        "fonear": call_function,
+        "chamba": define_function,
+        "patodos": for_loop,
+        "completiao": define_int,
+        "mochao": define_float,
+        "mecate": define_string
+    }
+)
