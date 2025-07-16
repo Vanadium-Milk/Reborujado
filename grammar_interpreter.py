@@ -16,14 +16,18 @@ class push_down_automata:
         self.productions = productions
         self.matrix = pred_matrix
     
-    def __get_next_state(self, state: int, token: str) -> int:
-        return self.matrix[state][self.terminals[token]]
+    def __get_next_state(self, state: int, token: str) -> int | None:
+        terminal = self.terminals[token]
+        if terminal is None:
+            return None
+        else:
+            return self.matrix[state][terminal]
     
-    def __traverse_productions (self, start: int, curr_prod: int, token: int, data: list[list[str]]) -> bool | int:
+    def __traverse_productions (self, start: int, curr_prod: int, token: int, data: list[list[str]]) -> int | None:
         #Production is the number as appears un the dictionary
 
         if curr_prod == None:
-            return False
+            return None
 
         #Ignore empty productions
         if len(self.productions[curr_prod]) == 0:
@@ -31,33 +35,34 @@ class push_down_automata:
         
         for symbol in self.productions[curr_prod]:
             #Check if enough tokens are present
-            if len(data) <= token:
+            if len(data) < token:
                 print("Incomplete sentence!")
-                return False
+                return None
             
             #Recursive travel all non terminal symbols
             if symbol in self.non_terminals:
                 state = self.non_terminals[symbol]
-                next = self.__get_next_state(state, data[token][1])
+                next = self.__get_next_state(state, self.__get_data_token(data, token))
 
-                token = self.__traverse_productions(start, next, token, data)
-                if not token:
-                    return False
+                if next is None:
+                    return None
+                
+                res = self.__traverse_productions(start, next, token, data)
+                if res is None:
+                    return None
+                else: token = res
 
             #Match terminals with the current token
-            elif symbol == data[token][1]:
+            elif symbol == self.__get_data_token(data, token):
                 token += 1
             else:
-                print(f"Error, expected {symbol}, found {data[token][1]}")
-                return False
+                print(f"Error, expected {symbol}, found {self.__get_data_token(data, token)}")
+                return None
         
         #Successfully traveled the base production and token list
-        if curr_prod == start:
-            return True
-        else:
-            return token
+        return token
     
-    def __group_tokens(self, start: int, curr_prod: int, token: int, data: list[list[str]], prod_groups: list[int]):
+    def __group_tokens(self, start: int, curr_prod: int, token: int, data: list[list[str]], prod_groups: list[int]) -> tuple[int, list]:
         sentences = []
 
         #Ignore empty productions
@@ -69,13 +74,18 @@ class push_down_automata:
             #Recursive travel all non terminal symbols
             if symbol in self.non_terminals:
                 state = self.non_terminals[symbol]
-                next = self.__get_next_state(state, data[token][1])
+                
+                next = self.__get_next_state(state, self.__get_data_token(data, token))
+                if next is None:
+                    raise RuntimeError
 
                 if next in prod_groups:
                     final = self.__traverse_productions(curr_prod, next, token, data)
-                    
-                    sentences.append(data[token:final])
-                    token = final
+                    if final:
+                        sentences.append(data[token:final])
+                        token = final
+                    else:
+                        raise RuntimeError
 
                 else:
                     a, b = self.__group_tokens(start, next, token, data, prod_groups)
@@ -91,22 +101,21 @@ class push_down_automata:
                 token += 1
         
         #Successfully traveled the base production and token list
-        if curr_prod == start:
-            return sentences
+        return token, sentences
+
+    def __get_data_token(self, data: list[list[str]], index) -> str:
+        if len(data) <= index:
+            return "$"
         else:
-            return token, sentences
-    
+            return data[index][1]
 
     def is_valid(self, tokens: list[list[str]]) -> bool:
         res = self.__traverse_productions(0,0,0,tokens)
 
-        if isinstance(res, bool):
-            return res
-        else:
-            return False
+        return not res is None
     
     def get_groups(self, tokens: list[list[str]], start_prod: int, prod_groups: list[int]) -> list:
-        res = self.__group_tokens(start_prod, start_prod, 0, tokens, prod_groups)
+        a, res = self.__group_tokens(start_prod, start_prod, 0, tokens, prod_groups)
 
         if isinstance(res, list):
             return res

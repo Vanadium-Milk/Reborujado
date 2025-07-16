@@ -1,19 +1,24 @@
 import tokenizer as ad
 import grammar_interpreter as gi
-import languaje_execution as le
 import semantic_interpreter as si
 
 def conditional (tokens: list[list[str]]):
-    condition = [False, True]
-    sub_blocks = grammar_read.get_groups(tokens, 45, [75])
+    sub_grammars = grammar_read.get_groups(tokens, 45, [75, 76])
+    
+    cond_exp = sub_grammars[::2]
+    sub_blocks = sub_grammars[1::2]
+
+    conditions = []
+    for expresions in cond_exp:
+        conditions.append(pseudocompiler.reduce_expresion(expresions))
 
     sentences = []
     for block in sub_blocks:
-        sentences.append(pseudocompiler.extract_functions(block + [["$", "$"]]))
+        sentences.append(pseudocompiler.extract_functions(block))
 
     #Support multiple elif declarations by iterating
     for i in range(len(sub_blocks)):
-        if condition[i]:
+        if conditions[i]:
             for func in sentences[i]:
                 func()
             
@@ -48,6 +53,47 @@ def define_string(tokens: list[list[str]]):
 def define_float(tokens: list[list[str]]):
     print("float")
     print(tokens)
+
+def output(tokens: list[list[str]]):
+    print(tokens)
+
+#Operands
+#class conversions are only a temporal fix before adding the symbols table
+def sum(a, b):
+    return int(a) + int(b)
+
+def substract(a, b):
+    return a - b
+
+def multiply(a, b):
+    return int(a) * int(b)
+
+def divide(a, b):
+    return a / b
+
+def b_and(a, b):
+    return a and b
+
+def b_or(a, b):
+    return a or b
+
+def greater(a, b):
+    return int(a) > int(b)
+
+def lesser(a, b):
+    return a < b
+
+def equal(a, b):
+    return a == b
+
+def different(a, b):
+    return a != b
+
+def e_greater(a, b):
+    return a >= b
+
+def e_lesser(a, b):
+    return a <= b
 
 RESERVED_TOKENS = {
     "completiao": 0,
@@ -239,8 +285,12 @@ grammar_read = gi.push_down_automata({
         "ARG": 24,
         "MULTIPLE": 25,
         "FUNC": 26,
-        "RERTORNAR": 27,
-        "SUBCODIGO": 28
+        "RETORNAR": 27,
+        "SUBCODIGO": 28,
+        "EXPRESION": 29,
+        "PRINT": 30,
+        "ARITMETICA": 31,
+        "RELACIONAL": 32
     },
     RESERVED_TOKENS,
     [
@@ -264,23 +314,23 @@ grammar_read = gi.push_down_automata({
         ["siono"], #17
         [], #18
         ["ASIGNACION"], #19
-        ["id", "=", "VALOR", "OPERACION", "COMPARACION"], #20
+        ["id", "=", "EXPRESION"], #20
         ["entero"], #21
         ["flotante"], #22
         ["cadena"], #23
         ["FUNC"], #24
         ["BOOLEANO"], #25
         ["id"], #26
-        ["(", "VALOR", "OPERACION", "COMPARACION", ")"], #27
+        ["(", "EXPRESION", ")"], #27
         ["voltiao", "VALOR"], #28
         ["sicierto"], #29
         ["nosierto"], #30
-        ["+", "VALOR", "OPERACION"], #31
-        ["-", "VALOR", "OPERACION"], #32
-        ["*", "VALOR", "OPERACION"], #33
-        ["/", "VALOR", "OPERACION"], #34
-        ["aparte", "VALOR", "OPERACION"], #35
-        ["osino", "VALOR", "OPERACION"], #36
+        ["+", "VALOR"], #31
+        ["-", "VALOR"], #32
+        ["*", "VALOR"], #33
+        ["/", "VALOR"], #34
+        ["aparte", "VALOR"], #35
+        ["osino", "VALOR"], #36
         [], #37
         ["==", "VALOR", "OPERACION"], #38
         ["!=", "VALOR", "OPERACION"], #39
@@ -289,8 +339,8 @@ grammar_read = gi.push_down_automata({
         [">", "VALOR", "OPERACION"], #42
         ["<", "VALOR", "OPERACION"], #43
         [], #44
-        ["dizque", "(", "VALOR", "OPERACION", "COMPARACION", ")", "tonces", "{", "SUBCODIGO", "}", "IFOPCIONAL", "ELSE"], #45
-        ["perosi", "(", "VALOR", "OPERACION", "COMPARACION", ")", "tonces", "{", "SUBCODIGO", "}", "IFOPCIONAL"], #46
+        ["dizque", "(", "EXPRESION", ")", "tonces", "{", "SUBCODIGO", "}", "IFOPCIONAL", "ELSE"], #45
+        ["perosi", "(", "EXPRESION", ")", "tonces", "{", "SUBCODIGO", "}", "IFOPCIONAL"], #46
         [], #47
         ["pasino", "{", "SUBCODIGO", "}"], #48
         [], #49
@@ -299,27 +349,31 @@ grammar_read = gi.push_down_automata({
         [], #52
         ["nomasno", "{", "SUBCODIGO", "}"], #53
         [], #54
-        ["patodos", "(", "VALOR", "OPERACION", ",", "VALOR", "OPERACION", "COMPARACION", ",", "id", "CAMBIADOR", ")", "{", "SUBCODIGO", "}"], #55
+        ["patodos", "(", "EXPRESION", ",", "EXPRESION", ",", "id", "CAMBIADOR", ")", "{", "SUBCODIGO", "}"], #55
         ["++"], #56
         ["--"], #57
-        ["ondes", "(", "VALOR", "OPERACION", "COMPARACION", ")", "{", "SUBCODIGO", "}"], #58
-        ["hacer", "{", "SUBCODIGO", "}", "ondes", "(", "VALOR", "OPERACION", "COMPARACION", ")",], #59
-        ["chamba", "id", "(", "PARAMS", ")", "{", "EMPEZAR", "regresar", "VALOR", "OPERACION", "COMPARACION", ";"], #60
+        ["ondes", "(", "EXPRESION", ")", "{", "SUBCODIGO", "}"], #58
+        ["hacer", "{", "SUBCODIGO", "}", "ondes", "(", "EXPRESION", ")",], #59
+        ["chamba", "id", "(", "PARAMS", ")", "{", "EMPEZAR", "regresar", "EXPRESION", ";"], #60
         ["DATO", "id", "PARAMSMULTIPLE"], #61
         [], #62
         [",", "DATO", "id", "PARAMSMULTIPLE"], #63
         [], #64
-        ["VALOR", "OPERACION", "COMPARACION", "MULTIPLE"], #65
+        ["EXPRESION", "MULTIPLE"], #65
         [], #66
-        [",", "VALOR", "OPERACION", "COMPARACION", "MULTIPLE"], #67
+        [",", "EXPRESION", "MULTIPLE"], #67
         [], #68
         ["fonear", "id", "(", "ARG", ")"], #69
-        ["disir", "(", "VALOR", "OPERACION", "COMPARACION", ")", ";", "EMPEZAR"], #70
+        ["PRINT", ";", "EMPEZAR"], #70
         [], #71
-        ["enfierrar", "VALOR", "OPERACION", "COMPARACION", ";"], #72
+        ["enfierrar", "EXPRESION", ";"], #72
         [], #73
         ["FOR", "EMPEZAR"], #74
-        ["EMPEZAR"] #75
+        ["EMPEZAR"], #75
+        ["VALOR", "OPERACION", "RELACIONAL"], #76
+        ["disir", "(", "EXPRESION", ")"], #77
+        ["ARITMETICA", "OPERACION"],
+        ["COMPARACION"]
     ],
     [
         [1,1,1,1,1,1,1,1,1,1,1,2,2,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,71,None,None,1,None,1,None,None,71,71],
@@ -350,14 +404,18 @@ grammar_read = gi.push_down_automata({
         [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,68,None,None,None,None,None,None,None,None,None,None,None,None,67,None,None,None,None,68],
         [None,None,None,None,None,None,None,None,None,69,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
         [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,73,None,None,None,None,None,None,None,72,73],
-        [75,75,75,75,75,75,75,75,75,75,75,75,75,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,75,None,None,75,None,75,None,None,75,75]
+        [75,75,75,75,75,75,75,75,75,75,75,75,75,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,75,None,None,75,None,75,None,None,75,75],
+        [None,None,None,None,None,None,None,None,76,76,None,None,None,None,76,76,76,76,76,76,76,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,77,None,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,31,32,33,34,35,36,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,79,None,None,None,None,None,None,None,None,None,None,None,None,None,79,79,79,79,79,79,79,None,None,None,None,None,None,79,None,None,None,None,79]
     ]
 )
 
 pseudocompiler = si.semantics_interpreter(
     grammar_read,
-    [45, 58, 59, 60, 50, 20, 69, 55, 13],
-    [],
+    [45,58,59,60,50,20,69,55,13,77],
+    [38,39,40,41,42,43,31,32,33,34,35,36,21,22,23,24,25,26,27,28],
     {
         "dizque": conditional,
         "ondes": while_loop,
@@ -368,6 +426,23 @@ pseudocompiler = si.semantics_interpreter(
         "patodos": for_loop,
         "completiao": define_int,
         "mochao": define_float,
-        "mecate": define_string
+        "mecate": define_string,
+        "disir": output,
+        "+": sum,
+        "-": substract,
+        "*": multiply,
+        "/": divide,
+        "aparte": b_and,
+        "osino": b_or,
+        ">": greater,
+        "<": lesser,
+        "==": equal,
+        "!=": different,
+        ">=": e_greater,
+        "<=": e_lesser
+    },
+    {
+        "sicierto": True,
+        "nosierto": False
     }
 )
