@@ -8,22 +8,40 @@ class semantics_interpreter:
     constants: dict
     grammar_interpreter: push_down_automata
     function_mapping: dict[str, types.FunctionType]
+    variables: dict
+    data_types: dict
 
     def __init__(self,
                  grammar: push_down_automata,
                  sentences: list[int],
                  expressions: list[int],
                  functions: dict[str, types.FunctionType],
-                 constants: dict) -> None:
+                 constants: dict,
+                 data_types: dict) -> None:
         
         self.grammar_interpreter = grammar
         self.sentences = sentences
         self.expressions = expressions
         self.function_mapping = functions
         self.constants = constants
+        self.data_types = data_types
+        self.variables = {}
     
-    def __pack_function(self, function: types.FunctionType, body: list[list[str]]):
+    def __pack_function(self, function: types.FunctionType, body: list[list[str]]) -> types.FunctionType:
         return lambda: function(body)
+    
+
+    def create_variable(self, id: str, value) -> None:
+        if id in self.variables:
+            raise RuntimeError
+        else:
+            self.variables.update({id: value})
+    
+    def get_variable_from_id(self, id: str):
+        if id in self.variables:
+            return self.variables[id]
+        else:
+            raise RuntimeError
 
     def reduce_expresion(self, tokens: list[list[str]]):
         
@@ -31,12 +49,20 @@ class semantics_interpreter:
         if tokens[0][0] == "(" and tokens[-1][0] == ")":
             tokens = tokens[1:-1]
 
-        #End of recursion
+        #End of recursion when tokens have no right or left operand
         if len(tokens) <= 2:
             value = tokens[-1][0]
+            type = tokens[-1][1]
 
-            if value in self.constants: return self.constants[value]
-            else: return value
+            if type == "id":
+                var = self.get_variable_from_id(value)
+                
+                return var
+            
+            if value in self.constants:
+                value = self.constants[value]
+            
+            return self.data_types[type](value)
 
         expression = self.grammar_interpreter.get_groups(tokens, 76, self.expressions)
 
@@ -67,6 +93,6 @@ class semantics_interpreter:
         for sentence in sentn_groups:
             func = self.function_mapping[sentence[0][0]]
 
-            callables.append(self.__pack_function(func, sentence + [["$", "$"]]))
+            callables.append(self.__pack_function(func, sentence))
 
         return callables

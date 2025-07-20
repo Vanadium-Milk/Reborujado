@@ -1,6 +1,17 @@
 import tokenizer as ad
 import grammar_interpreter as gi
 import semantic_interpreter as si
+from data_types import *
+
+def get_exp_values(tokens: list[list[str]], production: int):
+    value_exp = grammar_read.get_groups(tokens, production, [76])
+    return pseudocompiler.reduce_expresion(value_exp[0])
+
+def var_from_tokens(tokens: list[list[str]], data_type: str) -> None:
+    val = get_exp_values(tokens, 13)
+
+    pseudocompiler.create_variable(tokens[1][0], val)    
+
 
 def conditional (tokens: list[list[str]]):
     sub_grammars = grammar_read.get_groups(tokens, 45, [75, 76])
@@ -18,7 +29,7 @@ def conditional (tokens: list[list[str]]):
 
     #Support multiple elif declarations by iterating
     for i in range(len(sub_blocks)):
-        if conditions[i]:
+        if conditions[i].val:
             for func in sentences[i]:
                 func()
             
@@ -42,58 +53,59 @@ def define_function(tokens: list[list[str]]):
 def for_loop (tokens: list[list[str]]):
     pass
 
-def define_int(tokens: list[list[str]]):
-    print("int")
-    print(tokens)
+def define_int(tokens: list[list[str]]) -> None:
+    var_from_tokens(tokens, "entero")
 
-def define_string(tokens: list[list[str]]):
-    print("string")
-    print(tokens)
+def define_string(tokens: list[list[str]]) -> None:
+    var_from_tokens(tokens, "cadena")
 
-def define_float(tokens: list[list[str]]):
-    print("float")
-    print(tokens)
+def define_float(tokens: list[list[str]]) -> None:
+    var_from_tokens(tokens, "flotante")
+
+def define_bool(tokens: list[list[str]]) -> None:
+    var_from_tokens(tokens, "siono")
 
 def output(tokens: list[list[str]]):
-    print(tokens)
+    print(get_exp_values(tokens, 77).val)
 
 #Operands
 #class conversions are only a temporal fix before adding the symbols table
-def sum(a, b):
-    return int(a) + int(b)
+def sum(a: data_type, b: data_type):
+    return a.sum(b)
 
-def substract(a, b):
-    return a - b
+def subtract(a: data_type, b: data_type):
+    return a.subtract(b)
 
-def multiply(a, b):
-    return int(a) * int(b)
+def multiply(a: data_type, b: data_type):
+    return a.multiply(b)
 
-def divide(a, b):
-    return a / b
+def divide(a: data_type, b: data_type):
+    return a.divide(b)
 
-def b_and(a, b):
-    return a and b
+def b_and(a: data_type, b: data_type):
+    return a.b_and(b)
 
-def b_or(a, b):
-    return a or b
+def b_or(a: data_type, b: data_type):
+    return a.b_or(b)
 
-def greater(a, b):
-    return int(a) > int(b)
+def greater(a: data_type, b: data_type):
+    return a.greater(b)
 
-def lesser(a, b):
-    return a < b
+def lesser(a: data_type, b: data_type):
+    return a.lesser(b)
 
-def equal(a, b):
-    return a == b
+def equal(a: data_type, b: data_type):
+    return a.equal(b)
 
-def different(a, b):
-    return a != b
+def different(a: data_type, b: data_type):
+    return a.different(b)
 
-def e_greater(a, b):
-    return a >= b
+def e_greater(a: data_type, b: data_type):
+    return a.e_greater(b)
 
-def e_lesser(a, b):
-    return a <= b
+def e_lesser(a: data_type, b: data_type):
+    return a.e_lesser(b)
+
 
 RESERVED_TOKENS = {
     "completiao": 0,
@@ -427,9 +439,10 @@ pseudocompiler = si.semantics_interpreter(
         "completiao": define_int,
         "mochao": define_float,
         "mecate": define_string,
+        "siono": define_bool,
         "disir": output,
         "+": sum,
-        "-": substract,
+        "-": subtract,
         "*": multiply,
         "/": divide,
         "aparte": b_and,
@@ -444,5 +457,14 @@ pseudocompiler = si.semantics_interpreter(
     {
         "sicierto": True,
         "nosierto": False
+    },
+    {
+        "entero": completiao,
+        "flotante": mochao,
+        "cadena": mecate,
+        "siono": siono,
+        "sicierto": siono,
+        "nosierto": siono,
+        "fonable": fonable
     }
 )
