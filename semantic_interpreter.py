@@ -1,4 +1,5 @@
 from grammar_interpreter import push_down_automata
+from data_types import data_type
 import types
 
 class semantics_interpreter:
@@ -8,7 +9,7 @@ class semantics_interpreter:
     constants: dict
     grammar_interpreter: push_down_automata
     function_mapping: dict[str, types.FunctionType]
-    variables: dict
+    variables: dict[str, data_type]
     data_types: dict
 
     def __init__(self,
@@ -31,12 +32,18 @@ class semantics_interpreter:
         return lambda: function(body)
     
 
-    def create_variable(self, id: str, value) -> None:
+    def create_variable(self, id: str, value: data_type, data_type: type) -> None:
         if id in self.variables:
             raise RuntimeError
         else:
-            self.variables.update({id: value})
+            self.variables.update({id: data_type(value)})
     
+    def modify_variable(self, id: str, value: data_type) -> None:
+        if id in self.variables:
+            self.variables[id].assign_value(value)
+        else:
+            raise RuntimeError            
+
     def get_variable_from_id(self, id: str):
         if id in self.variables:
             return self.variables[id]
@@ -91,7 +98,7 @@ class semantics_interpreter:
         sentn_groups = self.grammar_interpreter.get_groups(tokens, 0, self.sentences)
 
         for sentence in sentn_groups:
-            func = self.function_mapping[sentence[0][0]]
+            func = self.function_mapping[sentence[0][1]]
 
             callables.append(self.__pack_function(func, sentence))
 

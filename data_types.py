@@ -52,12 +52,26 @@ class data_type:
 
     def e_lesser(self, data: data_type) -> siono | None:
         self._raise_unsupported(data, "=<")
+    
+    def assign_value(self, data) -> None:
+        pass
 
 class completiao(data_type):
     val: int
 
     def __init__(self, data) -> None:
-        self.val = int(data)
+        if isinstance(data, data_type):
+            self.assign_value(data)
+        else:
+            self.val = int(data)
+    
+    def assign_value(self, data) -> None:
+        if isinstance(data, completiao):
+            self.val = data.val
+        elif isinstance(data, mochao):
+            self.val = int(data.val)
+        else:
+            raise RuntimeError(f"Unsuported assignation for completiao: {type(data).__name__}")
     
     def sum(self, data: data_type) -> completiao | mochao | None:
         #Ading if-elif to prevent pylance from marking them incompatible operations
@@ -135,9 +149,20 @@ class completiao(data_type):
 class mochao(data_type):
     val: float
 
-    def __init__(self, value) -> None:
-        self.val = float(value)
+    def __init__(self, data) -> None:
+        if isinstance(data, data_type):
+            self.assign_value(data)
+        else:
+            self.val = float(data)
     
+    def assign_value(self, data) -> types.NoneType:
+        if isinstance(data, completiao):
+            self.val = float(data.val)
+        elif isinstance(data, mochao):
+            self.val = data.val
+        else:
+            raise RuntimeError(f"Unsuported assignation for mochao: {type(data).__name__}")
+
     def sum(self, data: data_type) -> mochao | None:
         if isinstance(data, completiao) or isinstance(data, mochao):
             return mochao(self.val + data.val)
@@ -221,8 +246,17 @@ class mecate(data_type):
         "un chingamadral-vergazo": 9223372036854775807
     }
 
-    def __init__(self, value) -> None:
-        self.val = str(value)
+    def __init__(self, data) -> None:
+        if isinstance(data, data_type):
+            self.assign_value(data)
+        else:
+            self.val = str(data)
+    
+    def assign_value(self, data) -> types.NoneType:
+        if isinstance(data, mecate):
+            self.val = data.val
+        else:
+            raise RuntimeError(f"Unsuported assignation for mecate: {type(data).__name__}")
 
     def sum(self, data: data_type) -> mecate | None:
         if isinstance(data, completiao) or isinstance(data, mochao):
@@ -292,8 +326,17 @@ class mecate(data_type):
 class siono(data_type):
     val: bool
 
-    def __init__(self, value) -> None:
-        self.val = bool(value)
+    def __init__(self, data) -> None:
+        if isinstance(data, data_type):
+            self.assign_value(data)
+        else:
+            self.val = bool(data)
+    
+    def assign_value(self, data) -> types.NoneType:
+        if isinstance(data, siono):
+            self.val = data.val
+        else:
+            raise RuntimeError(f"Unsuported assignation for siono: {type(data).__name__}")
 
     def b_and(self, data: data_type) -> siono:
         if isinstance(data, siono):

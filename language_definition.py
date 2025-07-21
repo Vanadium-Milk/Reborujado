@@ -3,21 +3,25 @@ import grammar_interpreter as gi
 import semantic_interpreter as si
 from data_types import *
 
+#Return the value resulting from the expression pressent in the tokens
 def get_exp_values(tokens: list[list[str]], production: int):
     value_exp = grammar_read.get_groups(tokens, production, [76])
     return pseudocompiler.reduce_expresion(value_exp[0])
 
-def var_from_tokens(tokens: list[list[str]], data_type: str) -> None:
+#Create a variable directly from the tokens list
+def var_from_tokens(tokens: list[list[str]], data_type: type) -> None:
     val = get_exp_values(tokens, 13)
 
-    pseudocompiler.create_variable(tokens[1][0], val)    
+    pseudocompiler.create_variable(tokens[1][0], val, data_type)
 
+#Return the code blocks and the corresponding sentences within a code block structure (if, while, for)
+def decompose_block(tokens: list[list[str]], prod: int) -> tuple[list, list]:
+    sub_grammars = grammar_read.get_groups(tokens, prod, [75, 76])
+    return sub_grammars[::2], sub_grammars[1::2]
 
+#if
 def conditional (tokens: list[list[str]]):
-    sub_grammars = grammar_read.get_groups(tokens, 45, [75, 76])
-    
-    cond_exp = sub_grammars[::2]
-    sub_blocks = sub_grammars[1::2]
+    cond_exp, sub_blocks = decompose_block(tokens, 45)
 
     conditions = []
     for expresions in cond_exp:
@@ -35,8 +39,17 @@ def conditional (tokens: list[list[str]]):
             
             break
 
+#while
 def while_loop (tokens: list[list[str]]):
-    pass
+    cond_exp, sub_blocks = decompose_block(tokens, 58)
+
+    while True:
+        if not pseudocompiler.reduce_expresion(cond_exp[0]).val:
+            break
+
+        for func in pseudocompiler.extract_functions(sub_blocks[0]):
+            func()
+
 
 def do_while_loop (tokens: list[list[str]]):
     pass
@@ -53,17 +66,20 @@ def define_function(tokens: list[list[str]]):
 def for_loop (tokens: list[list[str]]):
     pass
 
+def assign(tokens: list[list[str]]):
+    pseudocompiler.modify_variable(tokens[0][0], get_exp_values(tokens, 20))
+
 def define_int(tokens: list[list[str]]) -> None:
-    var_from_tokens(tokens, "entero")
+    var_from_tokens(tokens, completiao)
 
 def define_string(tokens: list[list[str]]) -> None:
-    var_from_tokens(tokens, "cadena")
+    var_from_tokens(tokens, mochao)
 
 def define_float(tokens: list[list[str]]) -> None:
-    var_from_tokens(tokens, "flotante")
+    var_from_tokens(tokens, mochao)
 
 def define_bool(tokens: list[list[str]]) -> None:
-    var_from_tokens(tokens, "siono")
+    var_from_tokens(tokens, siono)
 
 def output(tokens: list[list[str]]):
     print(get_exp_values(tokens, 77).val)
@@ -384,8 +400,8 @@ grammar_read = gi.push_down_automata({
         ["EMPEZAR"], #75
         ["VALOR", "OPERACION", "RELACIONAL"], #76
         ["disir", "(", "EXPRESION", ")"], #77
-        ["ARITMETICA", "OPERACION"],
-        ["COMPARACION"]
+        ["ARITMETICA", "OPERACION"], #78
+        ["COMPARACION"] #79
     ],
     [
         [1,1,1,1,1,1,1,1,1,1,1,2,2,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,71,None,None,1,None,1,None,None,71,71],
@@ -397,7 +413,7 @@ grammar_read = gi.push_down_automata({
         [None,None,None,None,None,None,None,None,20,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
         [None,None,None,None,None,None,None,None,26,24,None,None,None,None,21,22,23,25,25,27,28,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
         [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,29,30,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,37,None,None,None,None,None,None,None,31,32,33,34,35,36,37,37,37,37,37,37,37,None,None,None,None,None,None,37,None,None,None,None,37],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,37,None,None,None,None,None,None,None,78,78,78,78,78,78,37,37,37,37,37,37,37,None,None,None,None,None,None,37,None,None,None,None,37],
         [None,None,None,None,None,None,None,None,None,None,None,None,None,44,None,None,None,None,None,None,None,None,None,None,None,None,None,44,38,39,40,41,42,43,None,None,None,None,None,None,44,None,None,None,None,44],
         [None,None,None,None,45,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
         [47,47,47,47,47,47,47,47,47,47,47,47,47,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,46,47,47,None,None,47,None,47,None,None,47,47],
@@ -441,6 +457,7 @@ pseudocompiler = si.semantics_interpreter(
         "mecate": define_string,
         "siono": define_bool,
         "disir": output,
+        "id": assign,
         "+": sum,
         "-": subtract,
         "*": multiply,
