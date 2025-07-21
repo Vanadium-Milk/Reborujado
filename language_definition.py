@@ -282,7 +282,6 @@ grammar_read = gi.push_down_automata({
         [], #71
         ["enfierrar", "VALOR", "OPERACION", "COMPARACION", ";"], #72
         [], #73
-        ["FOR", "EMPEZAR"] #74
     ],
     [
         [1,1,1,1,1,1,1,1,1,1,1,2,2,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,71,None,None,1,None,1,None,None,71,71],
