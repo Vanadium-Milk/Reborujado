@@ -1,6 +1,162 @@
 import tokenizer as ad
 import grammar_interpreter as gi
-import languaje_execution as le
+import semantic_interpreter as si
+from data_types import *
+
+#Return the value resulting from the expression pressent in the tokens
+def get_exp_values(tokens: list[list[str]], production: int):
+    value_exp = grammar_read.get_groups(tokens, production, [76])
+    return interpreter.reduce_expresion(value_exp[0])
+
+#Create a variable directly from the tokens list
+def var_from_tokens(tokens: list[list[str]], data_type: type) -> None:
+    val = get_exp_values(tokens, 13)
+
+    interpreter.create_variable(tokens[1][0], val, data_type)
+    
+#Return the code blocks and the corresponding sentences within a code block structure (if, while, for)
+def decompose_block(tokens: list[list[str]], prod: int) -> tuple[list, list]:
+
+    #Subcode production is used to prevent extracting expressions within subcode
+    sub_grammars = grammar_read.get_groups(tokens, prod, [75, 76])
+    sentences = grammar_read.get_groups(tokens, prod, [75])
+
+    return [cond for cond in sub_grammars if not cond in sentences], sentences
+
+#If
+def conditional (tokens: list[list[str]]):
+    cond_exp, sub_blocks = decompose_block(tokens, 45)
+
+    #Support multiple elif declarations by iterating
+    for i in range(len(sub_blocks)):
+        if i >= len(cond_exp) or interpreter.reduce_expresion(cond_exp[i]).val:
+            interpreter.execute_locally(interpreter.extract_functions(sub_blocks[i]))
+            break
+
+#While
+def while_loop (tokens: list[list[str]]):
+    cond_exp, sub_blocks = decompose_block(tokens, 58)
+
+    functions = interpreter.extract_functions(sub_blocks[0])
+
+    while interpreter.reduce_expresion(cond_exp[0]).val:
+        interpreter.execute_locally(functions)
+
+#Do-wile
+def do_while_loop (tokens: list[list[str]]):
+    cond_exp, sub_blocks = decompose_block(tokens, 59)
+
+    functions = interpreter.extract_functions(sub_blocks[0])
+
+    while True:
+        interpreter.execute_locally(functions)
+        if not interpreter.reduce_expresion(cond_exp[0]).val:
+            break
+
+#Match
+def switch (tokens: list[list[str]]):
+    cond_exp, sub_blocks = decompose_block(tokens, 50)
+
+    condition = interpreter.reduce_expresion(cond_exp[0])
+
+    #match uses values instead of expresions, so they must be extracted from there
+    sub_grammars = grammar_read.get_groups(tokens, 50, [21, 22, 23, 24, 25, 26, 27, 28, 75, 76])
+    cases = [interpreter.reduce_expresion(cond) for cond in sub_grammars if not (cond in sub_blocks or cond in cond_exp)]
+
+    for i in range(len(sub_blocks)):
+        if i >= len(cases) or condition.equal(cases[i]).val:
+            interpreter.execute_locally(interpreter.extract_functions(sub_blocks[i]))
+            
+            break
+
+def call_function (tokens: list[list[str]]):
+    pass
+
+def define_function(tokens: list[list[str]]):
+    pass
+
+#For
+def for_loop (tokens: list[list[str]]):
+    exps, sub_blocks = decompose_block(tokens, 55)
+    
+    #patodos can use a declared variable or initialize it at the time
+    iter_id = tokens[2][0]
+    iterator = {iter_id: completiao(0)}
+
+    functions = interpreter.extract_functions(sub_blocks[0])
+
+    #match uses values instead of expresions, so they must be extracted from there
+    change = grammar_read.get_groups(tokens, 55, [56, 57])
+
+    if change[0][0][0] == "++":
+        increment = 1
+    else:
+        increment = -1
+
+    iterations = 0
+    solve_exp = lambda: interpreter.reduce_expresion(exps[0])
+    while interpreter.execute_locally([solve_exp], iterator)[0].val:
+        interpreter.execute_locally(functions, iterator)
+        
+        iterations += increment
+        iterator[iter_id].assign_value(completiao(iterations))
+
+def assign(tokens: list[list[str]]):
+    interpreter.modify_variable(tokens[0][0], get_exp_values(tokens, 20))
+
+def define_int(tokens: list[list[str]]) -> None:
+    var_from_tokens(tokens, completiao)
+
+def define_string(tokens: list[list[str]]) -> None:
+    var_from_tokens(tokens, mochao)
+
+def define_float(tokens: list[list[str]]) -> None:
+    var_from_tokens(tokens, mochao)
+
+def define_bool(tokens: list[list[str]]) -> None:
+    var_from_tokens(tokens, siono)
+
+def output(tokens: list[list[str]]):
+    print(get_exp_values(tokens, 77).val)
+
+#Operands
+#class conversions are only a temporal fix before adding the symbols table
+def sum(a: data_type, b: data_type):
+    return a.sum(b)
+
+def subtract(a: data_type, b: data_type):
+    return a.subtract(b)
+
+def multiply(a: data_type, b: data_type):
+    return a.multiply(b)
+
+def divide(a: data_type, b: data_type):
+    return a.divide(b)
+
+def b_and(a: data_type, b: data_type):
+    return a.b_and(b)
+
+def b_or(a: data_type, b: data_type):
+    return a.b_or(b)
+
+def greater(a: data_type, b: data_type):
+    return a.greater(b)
+
+def lesser(a: data_type, b: data_type):
+    return a.lesser(b)
+
+def equal(a: data_type, b: data_type):
+    return a.equal(b)
+
+def different(a: data_type, b: data_type):
+    return a.different(b)
+
+def e_greater(a: data_type, b: data_type):
+    return a.e_greater(b)
+
+def e_lesser(a: data_type, b: data_type):
+    return a.e_lesser(b)
+
 
 RESERVED_TOKENS = {
     "completiao": 0,
@@ -52,19 +208,6 @@ RESERVED_TOKENS = {
     "tonces": None,
     "{": None,
     "=": None,
-}
-
-LANGUAGE_FUNCTIONS = {
-    "dizque": le.conditional,
-    "ondes": le.while_loop,
-    "hacer": le.do_while_loop,
-    "chequear": le.switch,
-    "fonear": le.call_function,
-    "chamba": le.define_function,
-    "patodos": le.for_loop,
-    "completiao": le.define_int,
-    "mochao": le.define_float,
-    "mecate": le.define_string
 }
 
 token_reader = ad.deterministic_automata(
@@ -204,7 +347,13 @@ grammar_read = gi.push_down_automata({
         "PARAMSMULTIPLE": 23,
         "ARG": 24,
         "MULTIPLE": 25,
-        "FUNC": 26
+        "FUNC": 26,
+        "RETORNAR": 27,
+        "SUBCODIGO": 28,
+        "EXPRESION": 29,
+        "PRINT": 30,
+        "ARITMETICA": 31,
+        "RELACIONAL": 32
     },
     RESERVED_TOKENS,
     [
@@ -228,23 +377,23 @@ grammar_read = gi.push_down_automata({
         ["siono"], #17
         [], #18
         ["ASIGNACION"], #19
-        ["id", "=", "VALOR", "OPERACION", "COMPARACION"], #20
+        ["id", "=", "EXPRESION"], #20
         ["entero"], #21
         ["flotante"], #22
         ["cadena"], #23
         ["FUNC"], #24
         ["BOOLEANO"], #25
         ["id"], #26
-        ["(", "VALOR", "OPERACION", "COMPARACION", ")"], #27
+        ["(", "EXPRESION", ")"], #27
         ["voltiao", "VALOR"], #28
         ["sicierto"], #29
         ["nosierto"], #30
-        ["+", "VALOR", "OPERACION"], #31
-        ["-", "VALOR", "OPERACION"], #32
-        ["*", "VALOR", "OPERACION"], #33
-        ["/", "VALOR", "OPERACION"], #34
-        ["aparte", "VALOR", "OPERACION"], #35
-        ["osino", "VALOR", "OPERACION"], #36
+        ["+", "VALOR"], #31
+        ["-", "VALOR"], #32
+        ["*", "VALOR"], #33
+        ["/", "VALOR"], #34
+        ["aparte", "VALOR"], #35
+        ["osino", "VALOR"], #36
         [], #37
         ["==", "VALOR", "OPERACION"], #38
         ["!=", "VALOR", "OPERACION"], #39
@@ -253,35 +402,41 @@ grammar_read = gi.push_down_automata({
         [">", "VALOR", "OPERACION"], #42
         ["<", "VALOR", "OPERACION"], #43
         [], #44
-        ["dizque", "(", "VALOR", "OPERACION", "COMPARACION", ")", "tonces", "{", "EMPEZAR", "}", "IFOPCIONAL", "ELSE"], #45
-        ["perosi", "(", "VALOR", "OPERACION", "COMPARACION", ")", "tonces", "{", "EMPEZAR", "}", "IFOPCIONAL"], #46
+        ["dizque", "(", "EXPRESION", ")", "tonces", "{", "SUBCODIGO", "}", "IFOPCIONAL", "ELSE"], #45
+        ["perosi", "(", "EXPRESION", ")", "tonces", "{", "SUBCODIGO", "}", "IFOPCIONAL"], #46
         [], #47
-        ["pasino", "{", "EMPEZAR", "}"], #48
+        ["pasino", "{", "SUBCODIGO", "}"], #48
         [], #49
-        ["chequear", "(", "VALOR", ")", "{", "pal", "VALOR", "{", "EMPEZAR", "}", "CASO", "}", "DEFAULT"], #50
-        ["pal", "VALOR", "{", "EMPEZAR", "}", "CASO"], #51
+        ["chequear", "(", "EXPRESION", ")", "{", "pal", "VALOR", "{", "SUBCODIGO", "}", "CASO", "DEFAULT", "}"], #50
+        ["pal", "VALOR", "{", "SUBCODIGO", "}", "CASO"], #51
         [], #52
-        ["nomasno", "{", "EMPEZAR", "}"], #53
+        ["nomasno", "{", "SUBCODIGO", "}"], #53
         [], #54
-        ["patodos", "(", "VALOR", "OPERACION", ",", "VALOR", "OPERACION", "COMPARACION", ",", "id", "CAMBIADOR", ")", "{", "EMPEZAR", "}"], #55
+        ["patodos", "(", "id", ",", "EXPRESION", ",", "CAMBIADOR", ")", "{", "SUBCODIGO", "}"], #55
         ["++"], #56
         ["--"], #57
-        ["ondes", "(", "VALOR", "OPERACION", "COMPARACION", ")", "{", "EMPEZAR", "}"], #58
-        ["hacer", "{", "EMPEZAR", "}", "ondes", "(", "VALOR", "OPERACION", "COMPARACION", ")",], #59
-        ["chamba", "id", "(", "PARAMS", ")", "{", "EMPEZAR", "regresar", "VALOR", "OPERACION", "COMPARACION", ";"], #60
+        ["ondes", "(", "EXPRESION", ")", "{", "SUBCODIGO", "}"], #58
+        ["hacer", "{", "SUBCODIGO", "}", "ondes", "(", "EXPRESION", ")",], #59
+        ["chamba", "id", "(", "PARAMS", ")", "{", "EMPEZAR", "regresar", "EXPRESION", ";"], #60
         ["DATO", "id", "PARAMSMULTIPLE"], #61
         [], #62
         [",", "DATO", "id", "PARAMSMULTIPLE"], #63
         [], #64
-        ["VALOR", "OPERACION", "COMPARACION", "MULTIPLE"], #65
+        ["EXPRESION", "MULTIPLE"], #65
         [], #66
-        [",", "VALOR", "OPERACION", "COMPARACION", "MULTIPLE"], #67
+        [",", "EXPRESION", "MULTIPLE"], #67
         [], #68
         ["fonear", "id", "(", "ARG", ")"], #69
-        ["disir", "(", "VALOR", "OPERACION", "COMPARACION", ")", ";", "EMPEZAR"], #70
+        ["PRINT", ";", "EMPEZAR"], #70
         [], #71
-        ["enfierrar", "VALOR", "OPERACION", "COMPARACION", ";"], #72
+        ["enfierrar", "EXPRESION", ";"], #72
         [], #73
+        ["FOR", "EMPEZAR"], #74
+        ["EMPEZAR"], #75
+        ["VALOR", "OPERACION", "RELACIONAL"], #76
+        ["disir", "(", "EXPRESION", ")"], #77
+        ["ARITMETICA", "OPERACION"], #78
+        ["COMPARACION"] #79
     ],
     [
         [1,1,1,1,1,1,1,1,1,1,1,2,2,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,71,None,None,1,None,1,None,None,71,71],
@@ -293,14 +448,14 @@ grammar_read = gi.push_down_automata({
         [None,None,None,None,None,None,None,None,20,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
         [None,None,None,None,None,None,None,None,26,24,None,None,None,None,21,22,23,25,25,27,28,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
         [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,29,30,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,37,None,None,None,None,None,None,None,31,32,33,34,35,36,37,37,37,37,37,37,37,None,None,None,None,None,None,37,None,None,None,None,37],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,37,None,None,None,None,None,None,None,78,78,78,78,78,78,37,37,37,37,37,37,37,None,None,None,None,None,None,37,None,None,None,None,37],
         [None,None,None,None,None,None,None,None,None,None,None,None,None,44,None,None,None,None,None,None,None,None,None,None,None,None,None,44,38,39,40,41,42,43,None,None,None,None,None,None,44,None,None,None,None,44],
         [None,None,None,None,45,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
         [47,47,47,47,47,47,47,47,47,47,47,47,47,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,46,47,47,None,None,47,None,47,None,None,47,47],
         [49,49,49,49,49,49,49,49,49,49,49,49,49,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,48,49,None,None,49,None,49,None,None,49,49],
         [None,None,None,None,None,None,None,50,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,52,51,None,None,None,None,None,None,None,52],
-        [54,54,54,54,54,54,54,54,54,54,54,54,54,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,53,54,None,54,None,None,54,54],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,52,51,52,None,None,None,None,None,None,52],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,54,None,53,None,None,None,None,None,None,54],
         [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,55,None,None,None,None],
         [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,56,57,None,None],
         [None,None,None,None,None,58,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
@@ -311,51 +466,57 @@ grammar_read = gi.push_down_automata({
         [None,None,None,None,None,None,None,None,65,65,None,None,None,None,65,65,65,65,65,65,65,None,None,None,None,None,None,66,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,66],
         [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,68,None,None,None,None,None,None,None,None,None,None,None,None,67,None,None,None,None,68],
         [None,None,None,None,None,None,None,None,None,69,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,73,None,None,None,None,None,None,None,72,73]
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,73,None,None,None,None,None,None,None,72,73],
+        [75,75,75,75,75,75,75,75,75,75,75,75,75,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,75,None,None,75,None,75,None,None,75,75],
+        [None,None,None,None,None,None,None,None,76,76,None,None,None,None,76,76,76,76,76,76,76,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,77,None,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,31,32,33,34,35,36,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,79,None,None,None,None,None,None,None,None,None,None,None,None,None,79,79,79,79,79,79,79,None,None,None,None,None,None,79,None,None,None,None,79]
     ]
 )
 
-#File with rover commands
-input_file = open("input.txt","r").read()
-
-
-commands = []
-tokenized = token_reader.tokenize(input_file, [" ", "\n"])
-
-#Change tokens marked as "reserved tokens" to their actual reserved word
-valid = True
-for token in tokenized:
-
-    if token[1] == "no reconocido":
-        valid = False
-
-        #Exit or continue execution
-        selection = input(f"Error in line: , {token[0]} is not recognized, continue and ignore command? (Y/N): ")
-        if selection == "Y" or selection == "y":
-            continue
-        else:
-            exit()
-        
-    else:
-        if token[0] in RESERVED_TOKENS:
-            token[1] = token[0]
-
-#Validate grammar then proceed to execute command
-if grammar_read.is_valid(tokenized):
-
-    command = tokenized[0][0]
-
-    arguments = [token[0] for token in tokenized[1:]]
-    #objMapped = [objects[arg] if arg in objects else arg for arg in arguments ]
-
-    commands.append([command, arguments])
-
-else:
-    selection = input(f"Error in line: , invalid sintax continue and ignore command? (Y/N): ")
-
-    if selection != "Y" and selection != "y":
-        exit()
-
-#Execute all commands in order
-for com in commands:
-    LANGUAGE_FUNCTIONS[com[0]](com[1])
+interpreter = si.semantics_interpreter(
+    grammar_read,
+    [45,58,59,60,50,20,69,55,13,77],
+    [38,39,40,41,42,43,31,32,33,34,35,36,21,22,23,24,25,26,27,28],
+    {
+        "dizque": conditional,
+        "ondes": while_loop,
+        "hacer": do_while_loop,
+        "chequear": switch,
+        "fonear": call_function,
+        "chamba": define_function,
+        "patodos": for_loop,
+        "completiao": define_int,
+        "mochao": define_float,
+        "mecate": define_string,
+        "siono": define_bool,
+        "disir": output,
+        "id": assign,
+        "+": sum,
+        "-": subtract,
+        "*": multiply,
+        "/": divide,
+        "aparte": b_and,
+        "osino": b_or,
+        ">": greater,
+        "<": lesser,
+        "==": equal,
+        "!=": different,
+        ">=": e_greater,
+        "<=": e_lesser
+    },
+    {
+        "sicierto": True,
+        "nosierto": False
+    },
+    {
+        "entero": completiao,
+        "flotante": mochao,
+        "cadena": mecate,
+        "siono": siono,
+        "sicierto": siono,
+        "nosierto": siono,
+        "fonable": fonable
+    }
+)
