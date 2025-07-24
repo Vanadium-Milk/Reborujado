@@ -41,7 +41,7 @@ else:
     if selection != "Y" and selection != "y":
         exit()
 
-callables = pseudocompiler.extract_functions(tokenized)
+callables = interpreter.extract_functions(tokenized)
 
 for func in callables:
     func()

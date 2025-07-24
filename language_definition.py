@@ -6,56 +6,68 @@ from data_types import *
 #Return the value resulting from the expression pressent in the tokens
 def get_exp_values(tokens: list[list[str]], production: int):
     value_exp = grammar_read.get_groups(tokens, production, [76])
-    return pseudocompiler.reduce_expresion(value_exp[0])
+    return interpreter.reduce_expresion(value_exp[0])
 
 #Create a variable directly from the tokens list
 def var_from_tokens(tokens: list[list[str]], data_type: type) -> None:
     val = get_exp_values(tokens, 13)
 
-    pseudocompiler.create_variable(tokens[1][0], val, data_type)
-
+    interpreter.create_variable(tokens[1][0], val, data_type)
+    
 #Return the code blocks and the corresponding sentences within a code block structure (if, while, for)
 def decompose_block(tokens: list[list[str]], prod: int) -> tuple[list, list]:
-    sub_grammars = grammar_read.get_groups(tokens, prod, [75, 76])
-    return sub_grammars[::2], sub_grammars[1::2]
 
-#if
+    #Subcode production is used to prevent extracting expressions within subcode
+    sub_grammars = grammar_read.get_groups(tokens, prod, [75, 76])
+    sentences = grammar_read.get_groups(tokens, prod, [75])
+
+    return [cond for cond in sub_grammars if not cond in sentences], sentences
+
+#If
 def conditional (tokens: list[list[str]]):
     cond_exp, sub_blocks = decompose_block(tokens, 45)
 
-    conditions = []
-    for expresions in cond_exp:
-        conditions.append(pseudocompiler.reduce_expresion(expresions))
-
-    sentences = []
-    for block in sub_blocks:
-        sentences.append(pseudocompiler.extract_functions(block))
-
     #Support multiple elif declarations by iterating
     for i in range(len(sub_blocks)):
-        if conditions[i].val:
-            for func in sentences[i]:
-                func()
-            
+        if i >= len(cond_exp) or interpreter.reduce_expresion(cond_exp[i]).val:
+            interpreter.execute_locally(interpreter.extract_functions(sub_blocks[i]))
             break
 
-#while
+#While
 def while_loop (tokens: list[list[str]]):
     cond_exp, sub_blocks = decompose_block(tokens, 58)
 
+    functions = interpreter.extract_functions(sub_blocks[0])
+
+    while interpreter.reduce_expresion(cond_exp[0]).val:
+        interpreter.execute_locally(functions)
+
+#Do-wile
+def do_while_loop (tokens: list[list[str]]):
+    cond_exp, sub_blocks = decompose_block(tokens, 59)
+
+    functions = interpreter.extract_functions(sub_blocks[0])
+
     while True:
-        if not pseudocompiler.reduce_expresion(cond_exp[0]).val:
+        interpreter.execute_locally(functions)
+        if not interpreter.reduce_expresion(cond_exp[0]).val:
             break
 
-        for func in pseudocompiler.extract_functions(sub_blocks[0]):
-            func()
-
-
-def do_while_loop (tokens: list[list[str]]):
-    pass
-
+#Match
 def switch (tokens: list[list[str]]):
-    pass
+    cond_exp, sub_blocks = decompose_block(tokens, 50)
+
+    condition = interpreter.reduce_expresion(cond_exp[0])
+
+    #match uses values instead of expresions, so they must be extracted from there
+    sub_grammars = grammar_read.get_groups(tokens, 50, [21, 22, 23, 24, 25, 26, 27, 28, 75, 76])
+    cases = [interpreter.reduce_expresion(cond) for cond in sub_grammars if not (cond in sub_blocks or cond in cond_exp)]
+
+    for i in range(len(sub_blocks)):
+        if i >= len(cases) or condition.equal(cases[i]).val:
+            interpreter.execute_locally(interpreter.extract_functions(sub_blocks[i]))
+            
+            break
 
 def call_function (tokens: list[list[str]]):
     pass
@@ -63,11 +75,34 @@ def call_function (tokens: list[list[str]]):
 def define_function(tokens: list[list[str]]):
     pass
 
+#For
 def for_loop (tokens: list[list[str]]):
-    pass
+    exps, sub_blocks = decompose_block(tokens, 55)
+    
+    #patodos can use a declared variable or initialize it at the time
+    iter_id = tokens[2][0]
+    iterator = {iter_id: completiao(0)}
+
+    functions = interpreter.extract_functions(sub_blocks[0])
+
+    #match uses values instead of expresions, so they must be extracted from there
+    change = grammar_read.get_groups(tokens, 55, [56, 57])
+
+    if change[0][0][0] == "++":
+        increment = 1
+    else:
+        increment = -1
+
+    iterations = 0
+    solve_exp = lambda: interpreter.reduce_expresion(exps[0])
+    while interpreter.execute_locally([solve_exp], iterator)[0].val:
+        interpreter.execute_locally(functions, iterator)
+        
+        iterations += increment
+        iterator[iter_id].assign_value(completiao(iterations))
 
 def assign(tokens: list[list[str]]):
-    pseudocompiler.modify_variable(tokens[0][0], get_exp_values(tokens, 20))
+    interpreter.modify_variable(tokens[0][0], get_exp_values(tokens, 20))
 
 def define_int(tokens: list[list[str]]) -> None:
     var_from_tokens(tokens, completiao)
@@ -372,12 +407,12 @@ grammar_read = gi.push_down_automata({
         [], #47
         ["pasino", "{", "SUBCODIGO", "}"], #48
         [], #49
-        ["chequear", "(", "VALOR", ")", "{", "pal", "VALOR", "{", "SUBCODIGO", "}", "CASO", "}", "DEFAULT"], #50
+        ["chequear", "(", "EXPRESION", ")", "{", "pal", "VALOR", "{", "SUBCODIGO", "}", "CASO", "DEFAULT", "}"], #50
         ["pal", "VALOR", "{", "SUBCODIGO", "}", "CASO"], #51
         [], #52
         ["nomasno", "{", "SUBCODIGO", "}"], #53
         [], #54
-        ["patodos", "(", "EXPRESION", ",", "EXPRESION", ",", "id", "CAMBIADOR", ")", "{", "SUBCODIGO", "}"], #55
+        ["patodos", "(", "id", ",", "EXPRESION", ",", "CAMBIADOR", ")", "{", "SUBCODIGO", "}"], #55
         ["++"], #56
         ["--"], #57
         ["ondes", "(", "EXPRESION", ")", "{", "SUBCODIGO", "}"], #58
@@ -419,8 +454,8 @@ grammar_read = gi.push_down_automata({
         [47,47,47,47,47,47,47,47,47,47,47,47,47,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,46,47,47,None,None,47,None,47,None,None,47,47],
         [49,49,49,49,49,49,49,49,49,49,49,49,49,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,48,49,None,None,49,None,49,None,None,49,49],
         [None,None,None,None,None,None,None,50,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,52,51,None,None,None,None,None,None,None,52],
-        [54,54,54,54,54,54,54,54,54,54,54,54,54,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,53,54,None,54,None,None,54,54],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,52,51,52,None,None,None,None,None,None,52],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,54,None,53,None,None,None,None,None,None,54],
         [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,55,None,None,None,None],
         [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,56,57,None,None],
         [None,None,None,None,None,58,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
@@ -440,7 +475,7 @@ grammar_read = gi.push_down_automata({
     ]
 )
 
-pseudocompiler = si.semantics_interpreter(
+interpreter = si.semantics_interpreter(
     grammar_read,
     [45,58,59,60,50,20,69,55,13,77],
     [38,39,40,41,42,43,31,32,33,34,35,36,21,22,23,24,25,26,27,28],

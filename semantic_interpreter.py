@@ -1,6 +1,7 @@
 from grammar_interpreter import push_down_automata
 from data_types import data_type
-import types
+from types import FunctionType
+from typing import Mapping
 
 class semantics_interpreter:
 
@@ -8,7 +9,7 @@ class semantics_interpreter:
     expressions: list[int]
     constants: dict
     grammar_interpreter: push_down_automata
-    function_mapping: dict[str, types.FunctionType]
+    function_mapping: dict[str, FunctionType]
     variables: dict[str, data_type]
     data_types: dict
 
@@ -16,7 +17,7 @@ class semantics_interpreter:
                  grammar: push_down_automata,
                  sentences: list[int],
                  expressions: list[int],
-                 functions: dict[str, types.FunctionType],
+                 functions: dict[str, FunctionType],
                  constants: dict,
                  data_types: dict) -> None:
         
@@ -28,7 +29,7 @@ class semantics_interpreter:
         self.data_types = data_types
         self.variables = {}
     
-    def __pack_function(self, function: types.FunctionType, body: list[list[str]]) -> types.FunctionType:
+    def __pack_function(self, function: FunctionType, body: list[list[str]]) -> FunctionType:
         return lambda: function(body)
     
 
@@ -48,9 +49,9 @@ class semantics_interpreter:
         if id in self.variables:
             return self.variables[id]
         else:
-            raise RuntimeError
+            raise RuntimeError(f"{id} is not defined")
 
-    def reduce_expresion(self, tokens: list[list[str]]):
+    def reduce_expresion(self, tokens: list[list[str]]) -> data_type:
         
         #Remove parenthesis if no other operations are present
         if tokens[0][0] == "(" and tokens[-1][0] == ")":
@@ -91,8 +92,34 @@ class semantics_interpreter:
 
             return operation(ans, comp)
     
+    def execute_locally(self, functions: list[FunctionType], local_vars: Mapping[str, data_type] = {})-> list:
+        outer = [var for var in self.variables.keys()]
 
-    def extract_functions(self, tokens: list[list[str]]) -> list[types.FunctionType]:
+        #Repeated variable names are unsopported
+        for var in local_vars.keys():
+            if var in outer:
+                raise RuntimeError("Cannot define local variable with same id as outer scope")
+        
+        self.variables.update(local_vars)
+
+        #If functions have return it will pass it
+        res = []
+        for func in functions:
+            res.append(func())
+
+        #Remove local variables after execution
+        remove = []
+        for var in self.variables.keys():
+            if not var in outer:
+                remove.append(var)
+        
+        #Doing it this way to prevent the dictionary changing size during iteration
+        for var in remove:
+            self.variables.pop(var)
+        
+        return res
+
+    def extract_functions(self, tokens: list[list[str]]) -> list[FunctionType]:
         callables = []
         
         sentn_groups = self.grammar_interpreter.get_groups(tokens, 0, self.sentences)
