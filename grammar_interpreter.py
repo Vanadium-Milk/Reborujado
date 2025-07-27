@@ -45,7 +45,7 @@ class push_down_automata:
                 next = self.__get_next_state(state, self.__get_data_token(data, token))
 
                 if next is None:
-                    return None
+                    raise RuntimeError(f"{data[token][0]} is not a {symbol}")
                 
                 res = self.__traverse_productions(start, next, token, data)
                 if res is None:
@@ -62,33 +62,37 @@ class push_down_automata:
         #Successfully traveled the base production and token list
         return token
     
-    def __group_tokens(self, start: int, curr_prod: int, token: int, data: list[list[str]], prod_groups: list[int]) -> tuple[int, list]:
+    def __group_tokens(self, start: int, curr_prod: int, token: int, data: list[list[str]], prod_groups: set[int], recursive: bool) -> tuple[int, list]:
         sentences = []
 
         #Ignore empty productions
         if len(self.productions[curr_prod]) == 0:
             return token, sentences
         
+        #Read each simbol in the current production
         for symbol in self.productions[curr_prod]:
-            
             #Recursive travel all non terminal symbols
             if symbol in self.non_terminals:
                 state = self.non_terminals[symbol]
                 
                 next = self.__get_next_state(state, self.__get_data_token(data, token))
+
                 if next is None:
                     raise RuntimeError
-
-                if next in prod_groups:
+                
+                in_group = next in prod_groups
+                #Selected production is encountered, traverse to find its end and add it to the list
+                if in_group or not recursive:
                     final = self.__traverse_productions(curr_prod, next, token, data)
-                    if final:
-                        sentences.append(data[token:final])
-                        token = final
-                    else:
-                        raise RuntimeError
+                    if not final: raise RuntimeError
 
+                    if in_group:
+                        sentences.append(data[token:final])
+                    token = final    
+                    
+                #If recursive search beneath the tree for the desired productions
                 else:
-                    a, b = self.__group_tokens(start, next, token, data, prod_groups)
+                    a, b = self.__group_tokens(start, next, token, data, prod_groups, True)
                     #Types don't check if i don't do this
                     if isinstance(a, int):
                         token = a
@@ -114,8 +118,8 @@ class push_down_automata:
 
         return not res is None
     
-    def get_groups(self, tokens: list[list[str]], start_prod: int, prod_groups: list[int]) -> list:
-        a, res = self.__group_tokens(start_prod, start_prod, 0, tokens, prod_groups)
+    def get_groups(self, tokens: list[list[str]], start_prod: int, prod_groups: set[int], recursive: bool = True) -> list[list[list[str]]]:
+        a, res = self.__group_tokens(start_prod, start_prod, 0, tokens, prod_groups, recursive)
 
         if isinstance(res, list):
             return res

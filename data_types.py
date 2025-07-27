@@ -1,6 +1,6 @@
 from __future__ import annotations
 from math import floor, ceil
-import types
+from types import FunctionType, NoneType
 
 class data_type:
     val = None
@@ -59,7 +59,9 @@ class data_type:
 class completiao(data_type):
     val: int
 
-    def __init__(self, data) -> None:
+    def __init__(self, data = None) -> None:
+        if not data: return
+
         if isinstance(data, data_type):
             self.assign_value(data)
         else:
@@ -149,13 +151,15 @@ class completiao(data_type):
 class mochao(data_type):
     val: float
 
-    def __init__(self, data) -> None:
+    def __init__(self, data = None) -> None:
+        if not data: return
+
         if isinstance(data, data_type):
             self.assign_value(data)
         else:
             self.val = float(data)
     
-    def assign_value(self, data) -> types.NoneType:
+    def assign_value(self, data) -> None:
         if isinstance(data, completiao):
             self.val = float(data.val)
         elif isinstance(data, mochao):
@@ -246,13 +250,15 @@ class mecate(data_type):
         "un chingamadral-vergazo": 9223372036854775807
     }
 
-    def __init__(self, data) -> None:
+    def __init__(self, data = None) -> None:
+        if not data: return
+
         if isinstance(data, data_type):
             self.assign_value(data)
         else:
             self.val = str(data)
     
-    def assign_value(self, data) -> types.NoneType:
+    def assign_value(self, data) -> None:
         if isinstance(data, mecate):
             self.val = data.val
         else:
@@ -332,7 +338,7 @@ class siono(data_type):
         else:
             self.val = bool(data)
     
-    def assign_value(self, data) -> types.NoneType:
+    def assign_value(self, data) -> None:
         if isinstance(data, siono):
             self.val = data.val
         else:
@@ -356,10 +362,29 @@ class siono(data_type):
     def different(self, data: data_type) -> siono:
         return siono(self.val != data.val)
 
-class fonable(data_type):
-    func: types.FunctionType
-    arguments: list
+class chamba(data_type):
+    commands: list[FunctionType]
+    arguments: list[tuple[str, type]]
+    ret_type: type
 
-    def __init__(self, function: types.FunctionType, arguments: list) -> None:
-        self.func = function
+    def __init__(self,
+                 commands: list[FunctionType],
+                 arguments: list[tuple[str, type]],
+                 return_type: type = NoneType) -> None:
+        self.commands = commands
         self.arguments = arguments
+        self.ret_type = return_type
+    
+    def parse_arguments(self, arguments: list[data_type]):
+        if len(arguments) != len(self.arguments):
+            raise RuntimeError(f"Argument count doesn't match function definition")
+
+        variables = {}        
+        for i in range(len(arguments)):
+            #Verify all data types match
+            if not isinstance(arguments[i], self.arguments[i][1]):
+                raise RuntimeError(f"Data type doesn't match for argument: {self.arguments[i][0]}")
+            
+            variables.update({self.arguments[i][0]: arguments[i]})
+
+        return variables

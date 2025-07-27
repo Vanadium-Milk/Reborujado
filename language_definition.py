@@ -5,7 +5,7 @@ from data_types import *
 
 #Return the value resulting from the expression pressent in the tokens
 def get_exp_values(tokens: list[list[str]], production: int):
-    value_exp = grammar_read.get_groups(tokens, production, [76])
+    value_exp = grammar_read.get_groups(tokens, production, {76})
     return interpreter.reduce_expresion(value_exp[0])
 
 #Create a variable directly from the tokens list
@@ -18,8 +18,8 @@ def var_from_tokens(tokens: list[list[str]], data_type: type) -> None:
 def decompose_block(tokens: list[list[str]], prod: int) -> tuple[list, list]:
 
     #Subcode production is used to prevent extracting expressions within subcode
-    sub_grammars = grammar_read.get_groups(tokens, prod, [75, 76])
-    sentences = grammar_read.get_groups(tokens, prod, [75])
+    sub_grammars = grammar_read.get_groups(tokens, prod, {75, 76})
+    sentences = grammar_read.get_groups(tokens, prod, {75})
 
     return [cond for cond in sub_grammars if not cond in sentences], sentences
 
@@ -60,7 +60,7 @@ def switch (tokens: list[list[str]]):
     condition = interpreter.reduce_expresion(cond_exp[0])
 
     #match uses values instead of expresions, so they must be extracted from there
-    sub_grammars = grammar_read.get_groups(tokens, 50, [21, 22, 23, 24, 25, 26, 27, 28, 75, 76])
+    sub_grammars = grammar_read.get_groups(tokens, 50, {21, 22, 23, 24, 25, 26, 27, 28, 75, 76})
     cases = [interpreter.reduce_expresion(cond) for cond in sub_grammars if not (cond in sub_blocks or cond in cond_exp)]
 
     for i in range(len(sub_blocks)):
@@ -70,23 +70,42 @@ def switch (tokens: list[list[str]]):
             break
 
 def call_function (tokens: list[list[str]]):
-    pass
+    args_block = tokens[3:-1]
+    args_exp = grammar_read.get_groups(args_block, 65, {76})
+
+    arguments = [interpreter.reduce_expresion(a) for a in args_exp]
+
+    return interpreter.call_function(tokens[1][0], arguments)
 
 def define_function(tokens: list[list[str]]):
-    pass
+    id = tokens[2][0]
+    function_block = grammar_read.get_groups(tokens, 60, {75}, False)[0]
+    param_block = grammar_read.get_groups(tokens, 60, {61}, False)[0]
+    ret = tokens[1][0]
+
+    functions = interpreter.extract_functions(function_block)
+    par_types = param_block[::3]
+    par_ids = param_block[1::3]
+    return_type = interpreter.data_types[ret]
+
+    parameters = []
+    for i in range(len(par_types)):
+        parameters.append((par_ids[i][0], interpreter.data_types[par_types[i][0]]))
+
+    interpreter.define_function(id, parameters, functions, return_type)
 
 #For
 def for_loop (tokens: list[list[str]]):
     exps, sub_blocks = decompose_block(tokens, 55)
     
-    #patodos can use a declared variable or initialize it at the time
+    #Create a temporal variable for the iterator
     iter_id = tokens[2][0]
     iterator = {iter_id: completiao(0)}
 
     functions = interpreter.extract_functions(sub_blocks[0])
 
     #match uses values instead of expresions, so they must be extracted from there
-    change = grammar_read.get_groups(tokens, 55, [56, 57])
+    change = grammar_read.get_groups(tokens, 55, {56, 57})
 
     if change[0][0][0] == "++":
         increment = 1
@@ -101,6 +120,9 @@ def for_loop (tokens: list[list[str]]):
         iterations += increment
         iterator[iter_id].assign_value(completiao(iterations))
 
+def return_val(tokens: list[list[str]]):
+    return interpreter.reduce_expresion(tokens[1:])
+
 def assign(tokens: list[list[str]]):
     interpreter.modify_variable(tokens[0][0], get_exp_values(tokens, 20))
 
@@ -108,7 +130,7 @@ def define_int(tokens: list[list[str]]) -> None:
     var_from_tokens(tokens, completiao)
 
 def define_string(tokens: list[list[str]]) -> None:
-    var_from_tokens(tokens, mochao)
+    var_from_tokens(tokens, mecate)
 
 def define_float(tokens: list[list[str]]) -> None:
     var_from_tokens(tokens, mochao)
@@ -204,7 +226,8 @@ RESERVED_TOKENS = {
     "++": 42,
     "--": 43,
     "enfierrar": 44,
-    "$": 45,
+    "nomas": 45,
+    "$": 46,
     "tonces": None,
     "{": None,
     "=": None,
@@ -353,7 +376,8 @@ grammar_read = gi.push_down_automata({
         "EXPRESION": 29,
         "PRINT": 30,
         "ARITMETICA": 31,
-        "RELACIONAL": 32
+        "RELACIONAL": 32,
+        "TIPORETORNO": 33
     },
     RESERVED_TOKENS,
     [
@@ -417,7 +441,7 @@ grammar_read = gi.push_down_automata({
         ["--"], #57
         ["ondes", "(", "EXPRESION", ")", "{", "SUBCODIGO", "}"], #58
         ["hacer", "{", "SUBCODIGO", "}", "ondes", "(", "EXPRESION", ")",], #59
-        ["chamba", "id", "(", "PARAMS", ")", "{", "EMPEZAR", "regresar", "EXPRESION", ";"], #60
+        ["chamba", "TIPORETORNO", "id", "(", "PARAMS", ")", "{", "SUBCODIGO", "}"], #60
         ["DATO", "id", "PARAMSMULTIPLE"], #61
         [], #62
         [",", "DATO", "id", "PARAMSMULTIPLE"], #63
@@ -429,56 +453,59 @@ grammar_read = gi.push_down_automata({
         ["fonear", "id", "(", "ARG", ")"], #69
         ["PRINT", ";", "EMPEZAR"], #70
         [], #71
-        ["enfierrar", "EXPRESION", ";"], #72
-        [], #73
+        ["enfierrar", "EXPRESION"], #72
+        ["RETORNAR", ";", "EMPEZAR"], #73
         ["FOR", "EMPEZAR"], #74
         ["EMPEZAR"], #75
         ["VALOR", "OPERACION", "RELACIONAL"], #76
         ["disir", "(", "EXPRESION", ")"], #77
         ["ARITMETICA", "OPERACION"], #78
-        ["COMPARACION"] #79
+        ["COMPARACION"], #79
+        ["DATO"], #80
+        ["nomas"] #81
     ],
     [
-        [1,1,1,1,1,1,1,1,1,1,1,2,2,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,71,None,None,1,None,1,None,None,71,71],
-        [None,None,None,None,None,None,None,None,None,None,None,3,4,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [5,5,5,5,6,7,8,9,10,11,12,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,70,None,74,None,None,None,None],
-        [13,13,13,13,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [14,15,16,17,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,19,None,None,None,None,18,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,18],
-        [None,None,None,None,None,None,None,None,20,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,26,24,None,None,None,None,21,22,23,25,25,27,28,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,29,30,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,37,None,None,None,None,None,None,None,78,78,78,78,78,78,37,37,37,37,37,37,37,None,None,None,None,None,None,37,None,None,None,None,37],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,44,None,None,None,None,None,None,None,None,None,None,None,None,None,44,38,39,40,41,42,43,None,None,None,None,None,None,44,None,None,None,None,44],
-        [None,None,None,None,45,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [47,47,47,47,47,47,47,47,47,47,47,47,47,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,46,47,47,None,None,47,None,47,None,None,47,47],
-        [49,49,49,49,49,49,49,49,49,49,49,49,49,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,48,49,None,None,49,None,49,None,None,49,49],
-        [None,None,None,None,None,None,None,50,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,52,51,52,None,None,None,None,None,None,52],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,54,None,53,None,None,None,None,None,None,54],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,55,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,56,57,None,None],
-        [None,None,None,None,None,58,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,59,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None,None,60,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [61,61,61,61,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,62,None,None,None,None,None,None,None,62,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,62],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,64,None,None,None,None,None,None,None,None,None,None,None,None,63,None,None,None,None,64],
-        [None,None,None,None,None,None,None,None,65,65,None,None,None,None,65,65,65,65,65,65,65,None,None,None,None,None,None,66,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,66],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,68,None,None,None,None,None,None,None,None,None,None,None,None,67,None,None,None,None,68],
-        [None,None,None,None,None,None,None,None,None,69,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,73,None,None,None,None,None,None,None,72,73],
-        [75,75,75,75,75,75,75,75,75,75,75,75,75,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,75,None,None,75,None,75,None,None,75,75],
-        [None,None,None,None,None,None,None,None,76,76,None,None,None,None,76,76,76,76,76,76,76,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,77,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,31,32,33,34,35,36,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [None,None,None,None,None,None,None,None,None,None,None,None,None,79,None,None,None,None,None,None,None,None,None,None,None,None,None,79,79,79,79,79,79,79,None,None,None,None,None,None,79,None,None,None,None,79]
+        [1,1,1,1,1,1,1,1,1,1,1,2,2,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,71,None,None,1,None,1,None,None,1,None,71],
+        [None,None,None,None,None,None,None,None,None,None,None,3,4,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [5,5,5,5,6,7,8,9,10,11,12,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,70,None,74,None,None,73,None,None],
+        [13,13,13,13,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [14,15,16,17,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,19,None,None,None,None,18,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,18],
+        [None,None,None,None,None,None,None,None,20,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,26,24,None,None,None,None,21,22,23,25,25,27,28,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,29,30,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,37,None,None,None,None,None,None,None,78,78,78,78,78,78,37,37,37,37,37,37,37,None,None,None,None,None,None,37,None,None,None,None,None,37],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,44,None,None,None,None,None,None,None,None,None,None,None,None,None,44,38,39,40,41,42,43,None,None,None,None,None,None,44,None,None,None,None,None,44],
+        [None,None,None,None,45,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [47,47,47,47,47,47,47,47,47,47,47,47,47,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,46,47,47,None,None,47,None,47,None,None,47,None,47],
+        [49,49,49,49,49,49,49,49,49,49,49,49,49,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,48,49,None,None,49,None,49,None,None,49,None,49],
+        [None,None,None,None,None,None,None,50,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,52,51,52,None,None,None,None,None,None,None,52],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,54,None,53,None,None,None,None,None,None,None,54],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,55,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,56,57,None,None,None],
+        [None,None,None,None,None,58,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [None,None,None,None,None,None,59,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,None,None,60,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [61,61,61,61,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,62,None,None,None,None,None,None,None,62,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,62],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,64,None,None,None,None,None,None,None,None,None,None,None,None,63,None,None,None,None,None,64],
+        [None,None,None,None,None,None,None,None,65,65,None,None,None,None,65,65,65,65,65,65,65,None,None,None,None,None,None,66,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,66],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,68,None,None,None,None,None,None,None,None,None,None,None,None,67,None,None,None,None,None,68],
+        [None,None,None,None,None,None,None,None,None,69,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,72,None,None],
+        [75,75,75,75,75,75,75,75,75,75,75,75,75,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,75,None,None,75,None,75,None,None,75,None,None],
+        [None,None,None,None,None,None,None,None,76,76,None,None,None,None,76,76,76,76,76,76,76,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,77,None,None,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,31,32,33,34,35,36,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [None,None,None,None,None,None,None,None,None,None,None,None,None,79,None,None,None,None,None,None,None,None,None,None,None,None,None,79,79,79,79,79,79,79,None,None,None,None,None,None,79,None,None,None,None,None,79],
+        [80,80,80,80,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None, 81,None],
     ]
 )
 
 interpreter = si.semantics_interpreter(
     grammar_read,
-    [45,58,59,60,50,20,69,55,13,77],
-    [38,39,40,41,42,43,31,32,33,34,35,36,21,22,23,24,25,26,27,28],
+    {45,58,59,60,50,20,69,55,13,77,73},
+    {38,39,40,41,42,43,31,32,33,34,35,36,21,22,23,24,25,26,27,28},
     {
         "dizque": conditional,
         "ondes": while_loop,
@@ -493,6 +520,7 @@ interpreter = si.semantics_interpreter(
         "siono": define_bool,
         "disir": output,
         "id": assign,
+        "enfierrar": return_val,
         "+": sum,
         "-": subtract,
         "*": multiply,
@@ -511,12 +539,17 @@ interpreter = si.semantics_interpreter(
         "nosierto": False
     },
     {
+        #Using this instead of locate() because I want to maintain flexibility for the names
         "entero": completiao,
+        "completiao": completiao,
         "flotante": mochao,
+        "mochao": mochao,
         "cadena": mecate,
+        "mecate": mecate,
         "siono": siono,
         "sicierto": siono,
         "nosierto": siono,
-        "fonable": fonable
+        "chamba": chamba,
+        "nomas": None
     }
 )

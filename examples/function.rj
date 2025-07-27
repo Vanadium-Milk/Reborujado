@@ -1,0 +1,5 @@
+chamba nomas hablar ( mecate texto , completiao veces ) {
+    disir ( texto * veces ) ;
+}
+
+fonear hablar ( "hola_mundo" , 4 ) ;

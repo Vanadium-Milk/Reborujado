@@ -1,8 +1,7 @@
 from language_definition import *
 
 #File with rover commands
-input_file = open("input.txt","r").read()
-
+input_file = open(input("Select a file to interpret: "),"r").read()
 
 commands = []
 tokenized = token_reader.tokenize(input_file, [" ", "\n"])

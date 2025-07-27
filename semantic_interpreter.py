@@ -1,22 +1,24 @@
 from grammar_interpreter import push_down_automata
-from data_types import data_type
+from data_types import data_type, chamba
 from types import FunctionType
 from typing import Mapping
 
 class semantics_interpreter:
 
-    sentences: list[int]
-    expressions: list[int]
+    sentences: set[int]
+    expressions: set[int]
     constants: dict
     grammar_interpreter: push_down_automata
     function_mapping: dict[str, FunctionType]
-    variables: dict[str, data_type]
     data_types: dict
+
+    variables: dict[str, data_type]
+    defined_functions: dict[str, chamba]
 
     def __init__(self,
                  grammar: push_down_automata,
-                 sentences: list[int],
-                 expressions: list[int],
+                 sentences: set[int],
+                 expressions: set[int],
                  functions: dict[str, FunctionType],
                  constants: dict,
                  data_types: dict) -> None:
@@ -28,17 +30,22 @@ class semantics_interpreter:
         self.constants = constants
         self.data_types = data_types
         self.variables = {}
+        self.defined_functions = {}
     
     def __pack_function(self, function: FunctionType, body: list[list[str]]) -> FunctionType:
         return lambda: function(body)
     
 
     def create_variable(self, id: str, value: data_type, data_type: type) -> None:
-        if id in self.variables:
-            raise RuntimeError
-        else:
-            self.variables.update({id: data_type(value)})
+        if id in self.variables: raise RuntimeError(f"Variable: {id} already defined")
+
+        self.variables.update({id: data_type(value)})
     
+    def define_function(self, id: str, parameters: list[tuple[str, type]], commands: list[FunctionType], return_type: type):
+        if id in self.defined_functions: raise RuntimeError(f"Function: {id} already defined")
+
+        self.defined_functions.update({id: chamba(commands, parameters, return_type)})
+
     def modify_variable(self, id: str, value: data_type) -> None:
         if id in self.variables:
             self.variables[id].assign_value(value)
@@ -46,10 +53,16 @@ class semantics_interpreter:
             raise RuntimeError            
 
     def get_variable_from_id(self, id: str):
-        if id in self.variables:
-            return self.variables[id]
-        else:
-            raise RuntimeError(f"{id} is not defined")
+        if not id in self.variables: raise RuntimeError(f"{id} is not defined")
+            
+        return self.variables[id]
+
+    def call_function(self, id: str, arguments: list[data_type]):
+        if not id in self.defined_functions: raise RuntimeError(f"{id} is not defined")
+
+        function = self.defined_functions[id]
+        variables = function.parse_arguments(arguments)
+        return self.execute_locally(function.commands, variables)
 
     def reduce_expresion(self, tokens: list[list[str]]) -> data_type:
         
