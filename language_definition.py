@@ -29,7 +29,7 @@ def conditional (tokens: list[list[str]]):
 
     #Support multiple elif declarations by iterating
     for i in range(len(sub_blocks)):
-        if i >= len(cond_exp) or interpreter.reduce_expresion(cond_exp[i]).val:
+        if i >= len(cond_exp) or siono(interpreter.reduce_expresion(cond_exp[i])).val:
             interpreter.execute_locally(interpreter.extract_functions(sub_blocks[i]))
             break
 
@@ -39,7 +39,7 @@ def while_loop (tokens: list[list[str]]):
 
     functions = interpreter.extract_functions(sub_blocks[0])
 
-    while interpreter.reduce_expresion(cond_exp[0]).val:
+    while siono(interpreter.reduce_expresion(cond_exp[0])).val:
         interpreter.execute_locally(functions)
 
 #Do-wile
@@ -50,7 +50,7 @@ def do_while_loop (tokens: list[list[str]]):
 
     while True:
         interpreter.execute_locally(functions)
-        if not interpreter.reduce_expresion(cond_exp[0]).val:
+        if not siono(interpreter.reduce_expresion(cond_exp[0])).val:
             break
 
 #Match
@@ -71,26 +71,32 @@ def switch (tokens: list[list[str]]):
 
 def call_function (tokens: list[list[str]]):
     args_block = tokens[3:-1]
-    args_exp = grammar_read.get_groups(args_block, 65, {76})
 
-    arguments = [interpreter.reduce_expresion(a) for a in args_exp]
+    if len(args_block) > 0:
+        args_exp = grammar_read.get_groups(args_block, 65, {76})
+        arguments = [interpreter.reduce_expresion(a) for a in args_exp]
+    else:
+        arguments = []
 
     return interpreter.call_function(tokens[1][0], arguments)
 
 def define_function(tokens: list[list[str]]):
     id = tokens[2][0]
     function_block = grammar_read.get_groups(tokens, 60, {75}, False)[0]
-    param_block = grammar_read.get_groups(tokens, 60, {61}, False)[0]
+    param_block = grammar_read.get_groups(tokens, 60, {61}, False)
     ret = tokens[1][0]
 
     functions = interpreter.extract_functions(function_block)
-    par_types = param_block[::3]
-    par_ids = param_block[1::3]
     return_type = interpreter.data_types[ret]
 
     parameters = []
-    for i in range(len(par_types)):
-        parameters.append((par_ids[i][0], interpreter.data_types[par_types[i][0]]))
+
+    if len(param_block) > 0:
+        par_types = param_block[0][::3]
+        par_ids = param_block[0][1::3]
+
+        for i in range(len(par_types)):
+            parameters.append((par_ids[i][0], interpreter.data_types[par_types[i][0]]))
 
     interpreter.define_function(id, parameters, functions, return_type)
 
@@ -114,7 +120,8 @@ def for_loop (tokens: list[list[str]]):
 
     iterations = 0
     solve_exp = lambda: interpreter.reduce_expresion(exps[0])
-    while interpreter.execute_locally([solve_exp], iterator)[0].val:
+    while siono(interpreter.execute_locally([solve_exp], iterator)).val:
+
         interpreter.execute_locally(functions, iterator)
         
         iterations += increment
@@ -535,8 +542,8 @@ interpreter = si.semantics_interpreter(
         "<=": e_lesser
     },
     {
-        "sicierto": True,
-        "nosierto": False
+        "sicierto": siono(True),
+        "nosierto": siono(False)
     },
     {
         #Using this instead of locate() because I want to maintain flexibility for the names

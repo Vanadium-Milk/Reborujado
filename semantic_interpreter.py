@@ -62,7 +62,13 @@ class semantics_interpreter:
 
         function = self.defined_functions[id]
         variables = function.parse_arguments(arguments)
-        return self.execute_locally(function.commands, variables)
+        return_type = function.ret_type
+
+        res = self.execute_locally(function.commands, variables, True)
+        if return_type is None:
+            return
+        else:
+            return return_type(res)
 
     def reduce_expresion(self, tokens: list[list[str]]) -> data_type:
         
@@ -70,22 +76,24 @@ class semantics_interpreter:
         if tokens[0][0] == "(" and tokens[-1][0] == ")":
             tokens = tokens[1:-1]
 
+        expression = self.grammar_interpreter.get_groups(tokens, 76, self.expressions)
+
         #End of recursion when tokens have no right or left operand
-        if len(tokens) <= 2:
+        if len(expression) < 2:
+            if tokens[0][0] == "fonear":
+                #Execute the function definition
+                return self.function_mapping["fonear"](tokens)
+
             value = tokens[-1][0]
             type = tokens[-1][1]
 
             if type == "id":
-                var = self.get_variable_from_id(value)
-                
-                return var
+                return self.get_variable_from_id(value)
             
             if value in self.constants:
-                value = self.constants[value]
+                return self.constants[value]
             
             return self.data_types[type](value)
-
-        expression = self.grammar_interpreter.get_groups(tokens, 76, self.expressions)
 
         left = self.reduce_expresion(expression[0])
         right = self.reduce_expresion(expression[1][1:])
@@ -105,7 +113,7 @@ class semantics_interpreter:
 
             return operation(ans, comp)
     
-    def execute_locally(self, functions: list[FunctionType], local_vars: Mapping[str, data_type] = {})-> list:
+    def execute_locally(self, functions: list[FunctionType], local_vars: Mapping[str, data_type] = {}, return_first: bool = False) -> None | data_type:
         outer = [var for var in self.variables.keys()]
 
         #Repeated variable names are unsopported
@@ -115,10 +123,11 @@ class semantics_interpreter:
         
         self.variables.update(local_vars)
 
-        #If functions have return it will pass it
-        res = []
+        res = None
         for func in functions:
-            res.append(func())
+            res = func()
+            if return_first and res:
+                break
 
         #Remove local variables after execution
         remove = []

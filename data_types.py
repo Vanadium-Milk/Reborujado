@@ -341,6 +341,8 @@ class siono(data_type):
     def assign_value(self, data) -> None:
         if isinstance(data, siono):
             self.val = data.val
+        elif isinstance(data, data_type):
+            self.val = not data.val is None
         else:
             raise RuntimeError(f"Unsuported assignation for siono: {type(data).__name__}")
 
