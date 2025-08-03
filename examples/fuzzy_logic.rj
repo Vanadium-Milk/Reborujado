@@ -122,6 +122,7 @@ chamba mochao gauss_mf(mochao val, mochao desv, mochao media){
         tornachile 1 / fonear exponente_n(e, num / den);
     }
     pasino {
+        //Los exponentes fraccionarios aún no cuentan con soporte
         acabalado exp = num / div;
         acabalado raiz = den / div;
 
