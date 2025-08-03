@@ -60,7 +60,7 @@ class completiao(data_type):
     val: int
 
     def __init__(self, data = None) -> None:
-        if not data: return
+        if data is None: return
 
         if isinstance(data, data_type):
             self.assign_value(data)
@@ -102,7 +102,7 @@ class completiao(data_type):
 
     def divide(self, data: data_type) -> completiao | mochao | None:
         if isinstance(data, completiao):
-            return completiao(self.val / data.val)
+            return mochao(self.val / data.val)
         if isinstance(data, mochao):
             return mochao(self.val / data.val)
         else:
@@ -152,7 +152,7 @@ class mochao(data_type):
     val: float
 
     def __init__(self, data = None) -> None:
-        if not data: return
+        if data is None: return
 
         if isinstance(data, data_type):
             self.assign_value(data)
@@ -384,8 +384,11 @@ class chamba(data_type):
         variables = {}        
         for i in range(len(arguments)):
             #Verify all data types match
-            if not isinstance(arguments[i], self.arguments[i][1]):
-                raise RuntimeError(f"Data type doesn't match for argument: {self.arguments[i][0]}")
+            arg_type = self.arguments[i][1]
+            try:
+                arguments[i] = arg_type(arguments[i])
+            except:
+                raise RuntimeError(f"Data type not supported for argument: {self.arguments[i][0]}")
             
             variables.update({self.arguments[i][0]: arguments[i]})
 

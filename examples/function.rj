@@ -1,5 +1,14 @@
-chamba nomas hablar ( mecate texto , completiao veces ) {
-    disir ( texto * veces ) ;
+chamba nomas test ( ) {
+    disir ( "test" ) ;
 }
 
-fonear hablar ( "hola_mundo" , 4 ) ;
+chamba nomas hablar ( mecate texto , completiao veces ) {
+    disir ( texto * veces ) ;
+    fonear test ( ) ;
+}
+
+chamba completiao suma ( completiao a , completiao b ) {
+    enfierrar a + b ;
+}
+
+fonear hablar ( "hola_mundo" , fonear suma ( 1 , 2 ) ) ;

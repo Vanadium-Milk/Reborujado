@@ -30,8 +30,7 @@ def conditional (tokens: list[list[str]]):
     #Support multiple elif declarations by iterating
     for i in range(len(sub_blocks)):
         if i >= len(cond_exp) or siono(interpreter.reduce_expresion(cond_exp[i])).val:
-            interpreter.execute_locally(interpreter.extract_functions(sub_blocks[i]))
-            break
+            return interpreter.execute_locally(interpreter.extract_functions(sub_blocks[i]))
 
 #While
 def while_loop (tokens: list[list[str]]):
@@ -40,7 +39,9 @@ def while_loop (tokens: list[list[str]]):
     functions = interpreter.extract_functions(sub_blocks[0])
 
     while siono(interpreter.reduce_expresion(cond_exp[0])).val:
-        interpreter.execute_locally(functions)
+        res = interpreter.execute_locally(functions, return_first = True)
+        if res:
+            return res
 
 #Do-wile
 def do_while_loop (tokens: list[list[str]]):
@@ -264,6 +265,7 @@ token_reader = ad.deterministic_automata(
         '7': 0,
         '8': 0,
         '9': 0,
+        '_': 1,
         'a': 1,
         'b': 1,
         'c': 1,
@@ -511,7 +513,7 @@ grammar_read = gi.push_down_automata({
 
 interpreter = si.semantics_interpreter(
     grammar_read,
-    {45,58,59,60,50,20,69,55,13,77,73},
+    {45,58,59,60,50,20,69,55,13,77,72},
     {38,39,40,41,42,43,31,32,33,34,35,36,21,22,23,24,25,26,27,28},
     {
         "dizque": conditional,

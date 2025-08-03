@@ -2,7 +2,9 @@ class push_down_automata:
     non_terminals: dict[str, int]
     terminals: dict[str, int]
     productions: list[list[str]]
-    matrix: list[list]
+    matrix: list[list[int | None]]
+
+    __traversal_cache: dict[tuple[str,...], dict[int,int]]
 
     def __init__(self, non_terminals: dict[str, int], terminals: dict[str, int], productions: list[list[str]], pred_matrix: list[list]) -> None:
         
@@ -15,6 +17,8 @@ class push_down_automata:
         self.terminals = terminals
         self.productions = productions
         self.matrix = pred_matrix
+
+        self.__traversal_cache = {}
     
     def __get_next_state(self, state: int, token: str) -> int | None:
         terminal = self.terminals[token]
@@ -23,11 +27,14 @@ class push_down_automata:
         else:
             return self.matrix[state][terminal]
     
-    def __traverse_productions (self, start: int, curr_prod: int, token: int, data: list[list[str]]) -> int | None:
-        #Production is the number as appears un the dictionary
+    def __traverse_productions (self, curr_prod: int, data: list[list[str]], write_cache: bool = False) -> int:
+        token = 0
+        hashable = tuple([t[1] for t in data])
 
-        if curr_prod == None:
-            return None
+        if not write_cache and hashable in self.__traversal_cache:
+            prods = self.__traversal_cache[hashable]
+            if curr_prod in prods:
+                return prods[curr_prod]
 
         #Ignore empty productions
         if len(self.productions[curr_prod]) == 0:
@@ -36,8 +43,7 @@ class push_down_automata:
         for symbol in self.productions[curr_prod]:
             #Check if enough tokens are present
             if len(data) < token:
-                print("Incomplete sentence!")
-                return None
+                raise RuntimeError(f"Error, expected {symbol}")
             
             #Recursive travel all non terminal symbols
             if symbol in self.non_terminals:
@@ -45,21 +51,24 @@ class push_down_automata:
                 next = self.__get_next_state(state, self.__get_data_token(data, token))
 
                 if next is None:
-                    raise RuntimeError(f"{data[token][0]} is not a {symbol}")
+                    raise RuntimeError(f"Error near {str([t[0] for t in data[token: token + 5]])[1:-1]}: {data[token][0]} is not a {symbol}")
                 
-                res = self.__traverse_productions(start, next, token, data)
-                if res is None:
-                    return None
-                else: token = res
+                token += self.__traverse_productions(next, data[token:], write_cache)
 
             #Match terminals with the current token
             elif symbol == self.__get_data_token(data, token):
                 token += 1
             else:
-                print(f"Error, expected {symbol}, found {self.__get_data_token(data, token)}")
-                return None
+                raise RuntimeError(f"Error, expected {symbol}, found {self.__get_data_token(data, token)}")
         
         #Successfully traveled the base production and token list
+        if write_cache:
+            if hashable in self.__traversal_cache:
+                self.__traversal_cache[hashable].update({curr_prod: token})
+            else:
+                self.__traversal_cache.update({hashable: {curr_prod: token}})
+
+            
         return token
     
     def __group_tokens(self, start: int, curr_prod: int, token: int, data: list[list[str]], prod_groups: set[int], recursive: bool) -> tuple[int, list]:
@@ -83,7 +92,7 @@ class push_down_automata:
                 in_group = next in prod_groups
                 #Selected production is encountered, traverse to find its end and add it to the list
                 if in_group or not recursive:
-                    final = self.__traverse_productions(curr_prod, next, token, data)
+                    final = token + self.__traverse_productions(next, data[token:])
                     if not final: raise RuntimeError
 
                     if in_group:
@@ -114,7 +123,7 @@ class push_down_automata:
             return data[index][1]
 
     def is_valid(self, tokens: list[list[str]]) -> bool:
-        res = self.__traverse_productions(0,0,0,tokens)
+        res = self.__traverse_productions(0,tokens, True)
 
         return not res is None
     

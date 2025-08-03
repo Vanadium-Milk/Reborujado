@@ -61,10 +61,13 @@ class semantics_interpreter:
         if not id in self.defined_functions: raise RuntimeError(f"{id} is not defined")
 
         function = self.defined_functions[id]
-        variables = function.parse_arguments(arguments)
+        try:
+            variables = function.parse_arguments(arguments)
+        except Exception as ex:
+            raise RuntimeError(f"Error calling function {id}: {ex.args}")
         return_type = function.ret_type
 
-        res = self.execute_locally(function.commands, variables, True)
+        res = self.execute_locally(function.commands, variables, True, False)
         if return_type is None:
             return
         else:
@@ -74,7 +77,18 @@ class semantics_interpreter:
         
         #Remove parenthesis if no other operations are present
         if tokens[0][0] == "(" and tokens[-1][0] == ")":
-            tokens = tokens[1:-1]
+            #Make sure first and last correspond to the same expression
+            count = 0
+            single = True
+            for t in tokens[1:-1]:
+                if t[0] == "(":
+                    count += 1
+                elif t[0] == ")":
+                    count -= 1
+                    if count < 0:
+                        single = False
+                        break
+            if single: tokens = tokens[1:-1]
 
         expression = self.grammar_interpreter.get_groups(tokens, 76, self.expressions)
 
@@ -101,7 +115,10 @@ class semantics_interpreter:
         op = expression[1][0][0]
         operation = self.function_mapping[op]
 
-        ans = operation(left, right)
+        try:
+            ans = operation(left, right)
+        except Exception as ex:
+            raise RuntimeError(f"Operation error: {str([t[0] for t in tokens])[1:-1]}, {ex.args}")
 
         if len(expression) <= 2:
             return ans
@@ -113,15 +130,18 @@ class semantics_interpreter:
 
             return operation(ans, comp)
     
-    def execute_locally(self, functions: list[FunctionType], local_vars: Mapping[str, data_type] = {}, return_first: bool = False) -> None | data_type:
-        outer = [var for var in self.variables.keys()]
+    def execute_locally(self, functions: list[FunctionType], local_vars: Mapping[str, data_type] = {}, return_first: bool = False, outer_access: bool = True) -> None | data_type:
+        outer = self.variables.copy()
 
         #Repeated variable names are unsopported
         for var in local_vars.keys():
-            if var in outer:
-                raise RuntimeError("Cannot define local variable with same id as outer scope")
+            if var in outer and outer_access:
+                raise RuntimeError(f"Cannot define local variable: {var} with same id as outer scope")
         
-        self.variables.update(local_vars)
+        if outer_access:
+            self.variables.update(local_vars)
+        else:
+            self.variables = dict(local_vars)
 
         res = None
         for func in functions:
@@ -130,15 +150,18 @@ class semantics_interpreter:
                 break
 
         #Remove local variables after execution
-        remove = []
-        for var in self.variables.keys():
-            if not var in outer:
-                remove.append(var)
-        
-        #Doing it this way to prevent the dictionary changing size during iteration
-        for var in remove:
-            self.variables.pop(var)
-        
+        if outer_access:
+            remove = []
+            for var in self.variables:
+                if not var in outer:
+                    remove.append(var)
+            
+            #Doing it this way to prevent the dictionary changing size during iteration
+            for var in remove:
+                self.variables.pop(var)
+        else:
+            self.variables = outer
+
         return res
 
     def extract_functions(self, tokens: list[list[str]]) -> list[FunctionType]:
