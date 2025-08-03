@@ -9,16 +9,16 @@ class data_type:
         raise RuntimeError(f"unsuported operation: {type(self).__name__} {operand} {type(data).__name__}")
 
     #Override these methods to define language supported operations
-    def sum(self, data: data_type) -> completiao | mochao | mecate | None:
+    def sum(self, data: data_type) -> acabalado | mochao | mecate | None:
         self._raise_unsupported(data, "+")
 
-    def subtract(self, data: data_type) -> completiao | mochao | None:
+    def subtract(self, data: data_type) -> acabalado | mochao | None:
         self._raise_unsupported(data, "-")
 
-    def multiply(self, data: data_type) -> completiao | mochao | mecate | None:
+    def multiply(self, data: data_type) -> acabalado | mochao | mecate | None:
         self._raise_unsupported(data, "*")
 
-    def divide(self, data: data_type) -> completiao | mochao | None:
+    def divide(self, data: data_type) -> acabalado | mochao | None:
         self._raise_unsupported(data, "/")
 
     #All data types by default are equal to sicierto(true) if their value is defined 
@@ -56,7 +56,7 @@ class data_type:
     def assign_value(self, data) -> None:
         pass
 
-class completiao(data_type):
+class acabalado(data_type):
     val: int
 
     def __init__(self, data = None) -> None:
@@ -68,40 +68,40 @@ class completiao(data_type):
             self.val = int(data)
     
     def assign_value(self, data) -> None:
-        if isinstance(data, completiao):
+        if isinstance(data, acabalado):
             self.val = data.val
         elif isinstance(data, mochao):
             self.val = int(data.val)
         else:
-            raise RuntimeError(f"Unsuported assignation for completiao: {type(data).__name__}")
+            raise RuntimeError(f"Unsuported assignation for acabalado: {type(data).__name__}")
     
-    def sum(self, data: data_type) -> completiao | mochao | None:
+    def sum(self, data: data_type) -> acabalado | mochao | None:
         #Ading if-elif to prevent pylance from marking them incompatible operations
-        if isinstance(data, completiao):
-            return completiao(self.val + data.val)
+        if isinstance(data, acabalado):
+            return acabalado(self.val + data.val)
         if isinstance(data, mochao):
             return mochao(self.val + data.val)
         else:
             super().sum(data)
 
-    def subtract(self, data: data_type) -> completiao | mochao | None:
-        if isinstance(data, completiao):
-            return completiao(self.val - data.val)
+    def subtract(self, data: data_type) -> acabalado | mochao | None:
+        if isinstance(data, acabalado):
+            return acabalado(self.val - data.val)
         if isinstance(data, mochao):
             return mochao(self.val - data.val)
         else:
             super().subtract(data)
 
-    def multiply(self, data: data_type) -> completiao | mochao | None:
-        if isinstance(data, completiao):
-            return completiao(self.val * data.val)
+    def multiply(self, data: data_type) -> acabalado | mochao | None:
+        if isinstance(data, acabalado):
+            return acabalado(self.val * data.val)
         if isinstance(data, mochao):
             return mochao(self.val * data.val)
         else:
             super().multiply(data)
 
-    def divide(self, data: data_type) -> completiao | mochao | None:
-        if isinstance(data, completiao):
+    def divide(self, data: data_type) -> acabalado | mochao | None:
+        if isinstance(data, acabalado):
             return mochao(self.val / data.val)
         if isinstance(data, mochao):
             return mochao(self.val / data.val)
@@ -109,19 +109,19 @@ class completiao(data_type):
             super().divide(data)
 
     def greater(self, data: data_type) -> siono | None:
-        if isinstance(data, completiao) or isinstance(data, mochao):
+        if isinstance(data, acabalado) or isinstance(data, mochao):
             return siono(self.val > data.val)
         else:
             super().greater(data)
 
     def lesser(self, data: data_type) -> siono | None:
-        if isinstance(data, completiao) or isinstance(data, mochao):
+        if isinstance(data, acabalado) or isinstance(data, mochao):
             return siono(self.val < data.val)
         else:
             super().lesser(data)
 
     def equal(self, data: data_type) -> siono:
-        if isinstance(data, completiao):
+        if isinstance(data, acabalado):
             return siono(self.val == data.val)
         if isinstance(data, mochao):
             return siono(self.val == floor(data.val))
@@ -129,7 +129,7 @@ class completiao(data_type):
             return super().equal(data)
 
     def different(self, data: data_type) -> siono:
-        if isinstance(data, completiao):
+        if isinstance(data, acabalado):
             return siono(self.val != data.val)
         if isinstance(data, mochao):
             return siono(self.val != floor(data.val))
@@ -137,13 +137,13 @@ class completiao(data_type):
             return super().equal(data)
 
     def e_greater(self, data: data_type) -> siono | None:
-        if isinstance(data, completiao) or isinstance(data, mochao):
+        if isinstance(data, acabalado) or isinstance(data, mochao):
             return siono(self.val >= data.val)
         else:
             super().e_greater(data)
 
     def e_lesser(self, data: data_type) -> siono | None:
-        if isinstance(data, completiao) or isinstance(data, mochao):
+        if isinstance(data, acabalado) or isinstance(data, mochao):
             return siono(self.val <= data.val)
         else:
             super().e_lesser(data)
@@ -160,7 +160,7 @@ class mochao(data_type):
             self.val = float(data)
     
     def assign_value(self, data) -> None:
-        if isinstance(data, completiao):
+        if isinstance(data, acabalado):
             self.val = float(data.val)
         elif isinstance(data, mochao):
             self.val = data.val
@@ -168,43 +168,43 @@ class mochao(data_type):
             raise RuntimeError(f"Unsuported assignation for mochao: {type(data).__name__}")
 
     def sum(self, data: data_type) -> mochao | None:
-        if isinstance(data, completiao) or isinstance(data, mochao):
+        if isinstance(data, acabalado) or isinstance(data, mochao):
             return mochao(self.val + data.val)
         else:
             super().sum(data)
 
     def subtract(self, data: data_type) -> mochao | None:
-        if isinstance(data, completiao) or isinstance(data, mochao):
+        if isinstance(data, acabalado) or isinstance(data, mochao):
             return mochao(self.val - data.val)
         else:
             super().subtract(data)
 
     def multiply(self, data: data_type) -> mochao | None:
-        if isinstance(data, completiao) or isinstance(data, mochao):
+        if isinstance(data, acabalado) or isinstance(data, mochao):
             return mochao(self.val * data.val)
         else:
             super().multiply(data)
 
     def divide(self, data: data_type) -> mochao | None:
-        if isinstance(data, completiao) or isinstance(data, mochao):
+        if isinstance(data, acabalado) or isinstance(data, mochao):
             return mochao(self.val / data.val)
         else:
             super().divide(data)
 
     def greater(self, data: data_type) -> siono | None:
-        if isinstance(data, completiao) or isinstance(data, mochao):
+        if isinstance(data, acabalado) or isinstance(data, mochao):
             return siono(self.val > data.val)
         else:
             super().greater(data)
 
     def lesser(self, data: data_type) -> siono | None:
-        if isinstance(data, completiao) or isinstance(data, mochao):
+        if isinstance(data, acabalado) or isinstance(data, mochao):
             return siono(self.val < data.val)
         else:
             super().lesser(data)
 
     def equal(self, data: data_type) -> siono:
-        if isinstance(data, completiao):
+        if isinstance(data, acabalado):
             return siono(floor(self.val) == data.val)
         if isinstance(data, mochao):
             return siono(self.val == data.val)
@@ -212,7 +212,7 @@ class mochao(data_type):
             return super().equal(data)
 
     def different(self, data: data_type) -> siono:
-        if isinstance(data, completiao):
+        if isinstance(data, acabalado):
             return siono(floor(self.val) != data.val)
         if isinstance(data, mochao):
             return siono(self.val != data.val)
@@ -220,13 +220,13 @@ class mochao(data_type):
             return super().different(data)
 
     def e_greater(self, data: data_type) -> siono | None:
-        if isinstance(data, completiao) or isinstance(data, mochao):
+        if isinstance(data, acabalado) or isinstance(data, mochao):
             return siono(self.val >= data.val)
         else:
             super().e_greater(data)
 
     def e_lesser(self, data: data_type) -> siono | None:
-        if isinstance(data, completiao) or isinstance(data, mochao):
+        if isinstance(data, acabalado) or isinstance(data, mochao):
             return siono(self.val <= data.val)
         else:
             super().e_lesser(data)
@@ -265,7 +265,7 @@ class mecate(data_type):
             raise RuntimeError(f"Unsuported assignation for mecate: {type(data).__name__}")
 
     def sum(self, data: data_type) -> mecate | None:
-        if isinstance(data, completiao) or isinstance(data, mochao):
+        if isinstance(data, acabalado) or isinstance(data, mochao):
             return mecate(self.val + " y cachito")
         if isinstance(data, mecate):
             return mecate(self.val + data.val)
@@ -273,7 +273,7 @@ class mecate(data_type):
             super()
 
     def multiply(self, data: data_type) -> mecate | None:
-        if isinstance(data, completiao):
+        if isinstance(data, acabalado):
             if data.val < 20:
                 return mecate(self.val * data.val)
             else:
@@ -282,7 +282,7 @@ class mecate(data_type):
             super()
 
     def greater(self, data: data_type) -> siono | None:
-        if isinstance(data, completiao) or isinstance(data, mochao):
+        if isinstance(data, acabalado) or isinstance(data, mochao):
             return siono(self.natural_nums[self.val] > ceil(data.val))
         if isinstance(data, mecate):
             return siono(self.natural_nums[self.val] > self.natural_nums[data.val])
@@ -290,7 +290,7 @@ class mecate(data_type):
             super()
 
     def lesser(self, data: data_type) -> siono | None:
-        if isinstance(data, completiao) or isinstance(data, mochao):
+        if isinstance(data, acabalado) or isinstance(data, mochao):
             return siono(self.natural_nums[self.val] < ceil(data.val))
         if isinstance(data, mecate):
             return siono(self.natural_nums[self.val] < self.natural_nums[data.val])
@@ -298,7 +298,7 @@ class mecate(data_type):
             super()
 
     def equal(self, data: data_type) -> siono:
-        if isinstance(data, completiao):
+        if isinstance(data, acabalado):
             return siono(self.natural_nums[self.val] == data.val)
         if isinstance(data, mecate):
             return siono(self.val == data.val)
@@ -306,7 +306,7 @@ class mecate(data_type):
             return super().equal(data)
 
     def different(self, data: data_type) -> siono:
-        if isinstance(data, completiao):
+        if isinstance(data, acabalado):
             return siono(self.natural_nums[self.val] != data.val)
         if isinstance(data, mecate):
             return siono(self.val == data.val)
@@ -314,7 +314,7 @@ class mecate(data_type):
             return super().equal(data)
 
     def e_greater(self, data: data_type) -> siono | None:
-        if isinstance(data, completiao) or isinstance(data, mochao):
+        if isinstance(data, acabalado) or isinstance(data, mochao):
             return siono(self.natural_nums[self.val] >= ceil(data.val))
         if isinstance(data, mecate):
             return siono(self.natural_nums[self.val] >= self.natural_nums[data.val])
@@ -322,7 +322,7 @@ class mecate(data_type):
             super()
 
     def e_lesser(self, data: data_type) -> siono | None:
-        if isinstance(data, completiao) or isinstance(data, mochao):
+        if isinstance(data, acabalado) or isinstance(data, mochao):
             return siono(self.natural_nums[self.val] <= ceil(data.val))
         if isinstance(data, mecate):
             return siono(self.natural_nums[self.val] <= self.natural_nums[data.val])

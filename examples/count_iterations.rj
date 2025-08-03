@@ -1,4 +1,4 @@
-completiao veces = 1 ;
+acabalado veces = 1 ;
 ondes ( veces < 18 ) {
     veces = veces + 1 ;
     disir ( veces ) ;

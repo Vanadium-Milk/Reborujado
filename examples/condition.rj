@@ -1,7 +1,7 @@
-completiao casas = 16 ;
+acabalado casas = 16 ;
 
 dizque ( ( casas > 15 ) aparte sicierto ) tonces {
-    completiao edad = 13 ;
+    acabalado edad = 13 ;
     mecate saludo = "Hola" ;
     disir ( saludo ) ;
 }

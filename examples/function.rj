@@ -2,13 +2,13 @@ chamba nomas test ( ) {
     disir ( "test" ) ;
 }
 
-chamba nomas hablar ( mecate texto , completiao veces ) {
+chamba nomas hablar ( mecate texto , acabalado veces ) {
     disir ( texto * veces ) ;
     fonear test ( ) ;
 }
 
-chamba completiao suma ( completiao a , completiao b ) {
-    enfierrar a + b ;
+chamba acabalado suma ( acabalado a , acabalado b ) {
+    tornachile a + b ;
 }
 
 fonear hablar ( "hola_mundo" , fonear suma ( 1 , 2 ) ) ;

@@ -1,57 +1,57 @@
 chamba mochao absoluto ( mochao num ) {
     dizque ( num < 0 ) tonces {
-        enfierrar num * -1 ;
+        tornachile num * -1 ;
     }
     pasino {
-        enfierrar num ;
+        tornachile num ;
     }
 }
 
 chamba mochao min ( mochao a , mochao b ) {
     dizque ( a < b ) tonces {
-        enfierrar a ;
+        tornachile a ;
     }
     pasino {
-        enfierrar b ;
+        tornachile b ;
     }
 }
 
-chamba completiao piso ( mochao num ) {
-    enfierrar num ;
+chamba acabalado piso ( mochao num ) {
+    tornachile num ;
 }
 
 chamba mochao max ( mochao a , mochao b ) {
     dizque ( a > b ) tonces {
-        enfierrar a ;
+        tornachile a ;
     }
     pasino {
-        enfierrar b ;
+        tornachile b ;
     }
 }
 
-chamba completiao modulo ( completiao a , completiao b ) {
+chamba acabalado modulo ( acabalado a , acabalado b ) {
     b = fonear absoluto ( b ) ;
     a = fonear absoluto ( a ) ;
 
-    enfierrar a - ( fonear piso ( a / b ) * b ) ;
+    tornachile a - ( fonear piso ( a / b ) * b ) ;
 }
 
-chamba completiao com_divisor ( completiao num , completiao den ) {
+chamba acabalado com_divisor ( acabalado num , acabalado den ) {
     ondes ( den != 0 ) {
-        completiao anterior = den ;
+        acabalado anterior = den ;
         den = fonear modulo ( num , den ) ;
         num = anterior ;
     }
 
-    enfierrar num ;
+    tornachile num ;
 }
 
-chamba mochao exponente_n ( mochao num , completiao exp ) {
+chamba mochao exponente_n ( mochao num , acabalado exp ) {
     mochao res = num ;
     siono negativo = nosierto ;
     
     dizque ( exp == 0 ) tonces {
-        enfierrar 1 ;
+        tornachile 1 ;
     }
     perosi ( exp < 0 ) tonces {
         negativo = sicierto ;
@@ -62,16 +62,16 @@ chamba mochao exponente_n ( mochao num , completiao exp ) {
     }
     
     dizque ( negativo ) tonces {
-        enfierrar 1 / res ;
+        tornachile 1 / res ;
     }
     pasino {
-        enfierrar res ;
+        tornachile res ;
     }
 }
 
 chamba mochao raiz_n ( mochao num , mochao raiz ) {
     dizque ( raiz == 1 ) tonces {
-        enfierrar num ;
+        tornachile num ;
     }
 
     mochao bajo = 1 ;
@@ -82,7 +82,7 @@ chamba mochao raiz_n ( mochao num , mochao raiz ) {
         medio = ( bajo + alto ) / 2 ;
         mochao x = medio ;
 
-        completiao contar = 1 ;
+        acabalado contar = 1 ;
         hacer {
             x = x * medio ;
             contar = contar + 1 ;
@@ -90,7 +90,7 @@ chamba mochao raiz_n ( mochao num , mochao raiz ) {
         ondes ( ( x <= num ) aparte ( contar < raiz ) )
 
         dizque ( ( x <= num + 0.001 ) aparte ( x >= num - 0.001 ) ) tonces {
-            enfierrar medio ;
+            tornachile medio ;
         }
         perosi ( x > num ) tonces {
             alto = medio ;
@@ -100,45 +100,45 @@ chamba mochao raiz_n ( mochao num , mochao raiz ) {
         }
     }
 
-    enfierrar -1 ;
+    tornachile -1 ;
 }
 
 chamba mochao tri_mf ( mochao val , mochao inicio , mochao tope , mochao final ) {
     mochao lado_a = ( val - inicio ) / ( tope - inicio ) ;
     mochao lado_b = ( final - val ) / ( final - tope ) ;
 
-    enfierrar fonear max ( fonear min ( lado_a , lado_b ) , 0 ) ;
+    tornachile fonear max ( fonear min ( lado_a , lado_b ) , 0 ) ;
 }
 
 chamba mochao gauss_mf ( mochao val , mochao desv , mochao media ) {
     mochao e = 2.71828 ;
 
-    completiao num = fonear exponente_n ( val - media , 2 ) ;
-    completiao den = 2 * fonear exponente_n ( desv , 2 ) ;
+    acabalado num = fonear exponente_n ( val - media , 2 ) ;
+    acabalado den = 2 * fonear exponente_n ( desv , 2 ) ;
 
-    completiao div = fonear com_divisor ( num , den ) ;
+    acabalado div = fonear com_divisor ( num , den ) ;
 
     dizque ( fonear modulo ( num , den ) == 0 ) tonces {
-        enfierrar 1 / fonear exponente_n ( e , num / den ) ;
+        tornachile 1 / fonear exponente_n ( e , num / den ) ;
     }
     pasino {
-        completiao exp = num / div ;
-        completiao raiz = den / div ;
+        acabalado exp = num / div ;
+        acabalado raiz = den / div ;
 
-        completiao factor = fonear piso ( exp / raiz ) ;
+        acabalado factor = fonear piso ( exp / raiz ) ;
 
         mochao fraccionario = fonear exponente_n ( fonear raiz_n ( e , raiz ) , exp - ( raiz * factor ) ) ;
 
-        enfierrar 1 / ( fonear exponente_n ( e , factor ) * fraccionario ) ;
+        tornachile 1 / ( fonear exponente_n ( e , factor ) * fraccionario ) ;
     }
 }
 
-completiao servicio = 80 ;
-completiao comida = 80 ;
+acabalado servicio = 80 ;
+acabalado comida = 80 ;
 
-completiao baja = 0 ;
-completiao media = 10 ;
-completiao alta = 30 ;
+acabalado baja = 0 ;
+acabalado media = 10 ;
+acabalado alta = 30 ;
 
 mochao s_pobre = fonear tri_mf ( servicio , -1 , 25 , 50 ) ;
 mochao s_aceptable = fonear tri_mf ( servicio , 25 , 50 , 75 ) ;

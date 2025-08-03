@@ -107,7 +107,7 @@ def for_loop (tokens: list[list[str]]):
     
     #Create a temporal variable for the iterator
     iter_id = tokens[2][0]
-    iterator = {iter_id: completiao(0)}
+    iterator = {iter_id: acabalado(0)}
 
     functions = interpreter.extract_functions(sub_blocks[0])
 
@@ -126,7 +126,7 @@ def for_loop (tokens: list[list[str]]):
         interpreter.execute_locally(functions, iterator)
         
         iterations += increment
-        iterator[iter_id].assign_value(completiao(iterations))
+        iterator[iter_id].assign_value(acabalado(iterations))
 
 def return_val(tokens: list[list[str]]):
     return interpreter.reduce_expresion(tokens[1:])
@@ -135,7 +135,7 @@ def assign(tokens: list[list[str]]):
     interpreter.modify_variable(tokens[0][0], get_exp_values(tokens, 20))
 
 def define_int(tokens: list[list[str]]) -> None:
-    var_from_tokens(tokens, completiao)
+    var_from_tokens(tokens, acabalado)
 
 def define_string(tokens: list[list[str]]) -> None:
     var_from_tokens(tokens, mecate)
@@ -189,7 +189,7 @@ def e_lesser(a: data_type, b: data_type):
 
 
 RESERVED_TOKENS = {
-    "completiao": 0,
+    "acabalado": 0,
     "mochao": 1,
     "mecate": 2,
     "siono": 3,
@@ -233,7 +233,7 @@ RESERVED_TOKENS = {
     "patodos": 41,
     "++": 42,
     "--": 43,
-    "enfierrar": 44,
+    "tornachile": 44,
     "nomas": 45,
     "$": 46,
     "tonces": None,
@@ -404,7 +404,7 @@ grammar_read = gi.push_down_automata({
         ["FUNC", ";", "EMPEZAR"], #11
         ["FUNCIONDEF",  "EMPEZAR"], #12
         ["DATO", "INICIALIZACION"], #13
-        ["completiao"], #14
+        ["acabalado"], #14
         ["mochao"], #15
         ["mecate"], #16
         ["siono"], #17
@@ -462,7 +462,7 @@ grammar_read = gi.push_down_automata({
         ["fonear", "id", "(", "ARG", ")"], #69
         ["PRINT", ";", "EMPEZAR"], #70
         [], #71
-        ["enfierrar", "EXPRESION"], #72
+        ["tornachile", "EXPRESION"], #72
         ["RETORNAR", ";", "EMPEZAR"], #73
         ["FOR", "EMPEZAR"], #74
         ["EMPEZAR"], #75
@@ -523,13 +523,13 @@ interpreter = si.semantics_interpreter(
         "fonear": call_function,
         "chamba": define_function,
         "patodos": for_loop,
-        "completiao": define_int,
+        "acabalado": define_int,
         "mochao": define_float,
         "mecate": define_string,
         "siono": define_bool,
         "disir": output,
         "id": assign,
-        "enfierrar": return_val,
+        "tornachile": return_val,
         "+": sum,
         "-": subtract,
         "*": multiply,
@@ -549,8 +549,8 @@ interpreter = si.semantics_interpreter(
     },
     {
         #Using this instead of locate() because I want to maintain flexibility for the names
-        "entero": completiao,
-        "completiao": completiao,
+        "entero": acabalado,
+        "acabalado": acabalado,
         "flotante": mochao,
         "mochao": mochao,
         "cadena": mecate,
