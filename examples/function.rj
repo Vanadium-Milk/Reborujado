@@ -1,14 +1,14 @@
-chamba nomas test ( ) {
-    disir ( "test" ) ;
+chamba nomas test(){
+    disir("test");
 }
 
-chamba nomas hablar ( mecate texto , acabalado veces ) {
-    disir ( texto * veces ) ;
-    fonear test ( ) ;
+chamba nomas hablar(mecate texto, acabalado veces){
+    disir(texto * veces);
+    fonear test();
 }
 
-chamba acabalado suma ( acabalado a , acabalado b ) {
-    tornachile a + b ;
+chamba acabalado suma(acabalado a, acabalado b){
+    tornachile a + b;
 }
 
-fonear hablar ( "hola_mundo" , fonear suma ( 1 , 2 ) ) ;
+fonear hablar("hola_mundo", fonear suma(1, 2));

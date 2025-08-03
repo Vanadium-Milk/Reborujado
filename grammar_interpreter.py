@@ -59,7 +59,7 @@ class push_down_automata:
             elif symbol == self.__get_data_token(data, token):
                 token += 1
             else:
-                raise RuntimeError(f"Error, expected {symbol}, found {self.__get_data_token(data, token)}")
+                raise RuntimeError(f"Error near {str([t[0] for t in data[token: token + 5]])[1:-1]}: expected {symbol}, found {self.__get_data_token(data, token)}")
         
         #Successfully traveled the base production and token list
         if write_cache:

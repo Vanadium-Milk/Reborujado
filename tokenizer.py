@@ -1,12 +1,15 @@
 class deterministic_automata:
     transition_table: list[list]
     alphabet: dict[str, int]
-    terminal_states: dict[int, str]
+
+    successful_terminals: dict[int, str]
+    failed_terminals: dict[int, str]
 
     def __init__(self,
                  transition_table: list[list],
                  alphabet: dict[str, int],
-                 terminal_states: dict[int, str]):
+                 successful_terminals: dict[int, str],
+                 failed_terminals: dict[int, str]):
 
         #Verifies that the transition_table has the same lenght on all lines
         alphabet_size = len(transition_table[0])
@@ -16,53 +19,47 @@ class deterministic_automata:
         
         self.transition_table = transition_table
         self.alphabet = alphabet
-        self.terminal_states = terminal_states
+        self.successful_terminals = successful_terminals
+        self.failed_terminals = failed_terminals
+
+    def __get_transition_state(self, state: int, character: str):
+        if character in self.alphabet:
+            #Change state to the one in the character column
+            return self.transition_table[state][self.alphabet[character]]
+        else:
+            #Change to the state change in last column
+            return self.transition_table[state][-1]
 
     def tokenize(self, expresion: str, delimiters: list[str]) -> list[list[str]]:
-        
         #Array with the resulting evaluated tokens
         tokens = []
-
-        #Just to finish the sentence
-        expresion += delimiters[0]
 
         #Pointers
         state = 0
         read = ''
-        terminal = False
         next = 0
 
-        for char in expresion:
+        for char in expresion + '$':
+            next = self.__get_transition_state(state, char)
 
-            if not terminal:
-                #Check existance of character
-                if char in self.alphabet:
-                    #Change state to the one in the character column
-                    next = self.transition_table[state][self.alphabet[char]]
-                else:
-                    #Change to the state change in last column
-                    next = self.transition_table[state][-1]
-
-
-                if next in self.terminal_states:
-                    #Terminal state, end token
-                    terminal = True
-                else:
-                    state = next
-
-            if char in delimiters:
+            if next in self.successful_terminals:
                 #Add token to the list
-                if terminal:
-                    tokens.append([read, self.terminal_states[next]])
+                tokens.append([read, self.successful_terminals[next]])
 
                 #reset pointers
-                state = 0
                 read = ''
-                terminal = False
-                next = 0
+                if char not in delimiters:
+                    state = self.__get_transition_state(0, char)
+                else:
+                    state = 0
 
+            #The token is not a valid expression
+            elif next in self.failed_terminals:
+                raise RuntimeError(f"{read + char + "..."} is a {self.failed_terminals[next]}")
             else:
-                #transcribe expresions
+                state = next
+            
+            if char not in delimiters:
                 read += char
 
         return tokens

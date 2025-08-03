@@ -1,5 +1,5 @@
-acabalado veces = 1 ;
-ondes ( veces < 18 ) {
-    veces = veces + 1 ;
-    disir ( veces ) ;
+acabalado veces = 1;
+ondes (veces < 200){
+    veces = veces + 1;
+    disir(veces);
 }

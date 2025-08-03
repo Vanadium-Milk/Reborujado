@@ -1,166 +1,166 @@
-chamba mochao absoluto ( mochao num ) {
-    dizque ( num < 0 ) tonces {
-        tornachile num * -1 ;
+chamba mochao absoluto(mochao num) {
+    dizque (num < 0) tonces {
+        tornachile num * -1;
     }
     pasino {
-        tornachile num ;
+        tornachile num;
     }
 }
 
-chamba mochao min ( mochao a , mochao b ) {
-    dizque ( a < b ) tonces {
+chamba mochao min(mochao a ,mochao b){
+    dizque (a < b) tonces {
         tornachile a ;
     }
-    pasino {
-        tornachile b ;
+    pasino{
+        tornachile b;
     }
 }
 
-chamba acabalado piso ( mochao num ) {
-    tornachile num ;
+chamba acabalado piso(mochao num){
+    tornachile num;
 }
 
-chamba mochao max ( mochao a , mochao b ) {
-    dizque ( a > b ) tonces {
-        tornachile a ;
+chamba mochao max(mochao a ,mochao b){
+    dizque (a > b) tonces {
+        tornachile a;
     }
-    pasino {
-        tornachile b ;
+    pasino{
+        tornachile b;
     }
 }
 
-chamba acabalado modulo ( acabalado a , acabalado b ) {
-    b = fonear absoluto ( b ) ;
-    a = fonear absoluto ( a ) ;
+chamba acabalado modulo (acabalado a, acabalado b) {
+    b = fonear absoluto(b);
+    a = fonear absoluto (a);
 
-    tornachile a - ( fonear piso ( a / b ) * b ) ;
+    tornachile a -(fonear piso(a / b) * b);
 }
 
-chamba acabalado com_divisor ( acabalado num , acabalado den ) {
-    ondes ( den != 0 ) {
-        acabalado anterior = den ;
-        den = fonear modulo ( num , den ) ;
-        num = anterior ;
+chamba acabalado com_divisor (acabalado num, acabalado den){
+    ondes (den != 0) {
+        acabalado anterior = den;
+        den = fonear modulo(num, den);
+        num = anterior;
     }
 
-    tornachile num ;
+    tornachile num;
 }
 
-chamba mochao exponente_n ( mochao num , acabalado exp ) {
-    mochao res = num ;
-    siono negativo = nosierto ;
+chamba mochao exponente_n(mochao num, acabalado exp){
+    mochao res = num;
+    siono negativo = nosierto;
     
-    dizque ( exp == 0 ) tonces {
-        tornachile 1 ;
+    dizque (exp == 0) tonces {
+        tornachile 1;
     }
-    perosi ( exp < 0 ) tonces {
-        negativo = sicierto ;
-        exp = 0 - exp ;
+    perosi (exp < 0) tonces{
+        negativo = sicierto;
+        exp = 0 - exp;
     }
-    patodos ( i , i < exp - 1 , ++ ) {
-        res = res * num ;
+    patodos (i, i < exp - 1, ++){
+        res = res*num;
     }
     
-    dizque ( negativo ) tonces {
-        tornachile 1 / res ;
+    dizque (negativo) tonces {
+        tornachile 1 / res;
     }
     pasino {
-        tornachile res ;
+        tornachile res;
     }
 }
 
-chamba mochao raiz_n ( mochao num , mochao raiz ) {
-    dizque ( raiz == 1 ) tonces {
-        tornachile num ;
+chamba mochao raiz_n(mochao num, mochao raiz){
+    dizque (raiz == 1) tonces {
+        tornachile num;
     }
 
-    mochao bajo = 1 ;
-    mochao alto = num ;
-    mochao medio = 0 ;
+    mochao bajo = 1;
+    mochao alto = num;
+    mochao medio = 0;
 
-    ondes ( bajo <= alto ) {
-        medio = ( bajo + alto ) / 2 ;
-        mochao x = medio ;
+    ondes (bajo <= alto){
+        medio = (bajo + alto) / 2;
+        mochao x = medio;
 
-        acabalado contar = 1 ;
+        acabalado contar = 1;
         hacer {
-            x = x * medio ;
-            contar = contar + 1 ;
+            x = x * medio;
+            contar = contar + 1;
         }
-        ondes ( ( x <= num ) aparte ( contar < raiz ) )
+        ondes ((x <= num) aparte (contar < raiz))
 
-        dizque ( ( x <= num + 0.001 ) aparte ( x >= num - 0.001 ) ) tonces {
-            tornachile medio ;
+        dizque ((x <= num + 0.001) aparte (x >= num - 0.001)) tonces {
+            tornachile medio;
         }
-        perosi ( x > num ) tonces {
-            alto = medio ;
+        perosi (x > num) tonces{
+            alto = medio;
         }
-        pasino {
-            bajo = medio ;
+        pasino{
+            bajo = medio;
         }
     }
 
-    tornachile -1 ;
+    tornachile -1;
 }
 
-chamba mochao tri_mf ( mochao val , mochao inicio , mochao tope , mochao final ) {
-    mochao lado_a = ( val - inicio ) / ( tope - inicio ) ;
-    mochao lado_b = ( final - val ) / ( final - tope ) ;
+chamba mochao tri_mf(mochao val ,mochao inicio, mochao tope, mochao final){
+    mochao lado_a = (val - inicio) / (tope - inicio);
+    mochao lado_b = (final - val) / (final - tope);
 
-    tornachile fonear max ( fonear min ( lado_a , lado_b ) , 0 ) ;
+    tornachile fonear max(fonear min(lado_a, lado_b), 0);
 }
 
-chamba mochao gauss_mf ( mochao val , mochao desv , mochao media ) {
-    mochao e = 2.71828 ;
+chamba mochao gauss_mf(mochao val, mochao desv, mochao media){
+    mochao e = 2.71828;
 
-    acabalado num = fonear exponente_n ( val - media , 2 ) ;
-    acabalado den = 2 * fonear exponente_n ( desv , 2 ) ;
+    acabalado num = fonear exponente_n(val - media, 2);
+    acabalado den = 2 * fonear exponente_n(desv , 2);
 
-    acabalado div = fonear com_divisor ( num , den ) ;
+    acabalado div = fonear com_divisor(num, den);
 
-    dizque ( fonear modulo ( num , den ) == 0 ) tonces {
-        tornachile 1 / fonear exponente_n ( e , num / den ) ;
+    dizque(fonear modulo(num, den) == 0) tonces {
+        tornachile 1 / fonear exponente_n(e, num / den);
     }
     pasino {
-        acabalado exp = num / div ;
-        acabalado raiz = den / div ;
+        acabalado exp = num / div;
+        acabalado raiz = den / div;
 
-        acabalado factor = fonear piso ( exp / raiz ) ;
+        acabalado factor = fonear piso(exp / raiz);
 
-        mochao fraccionario = fonear exponente_n ( fonear raiz_n ( e , raiz ) , exp - ( raiz * factor ) ) ;
+        mochao fraccionario = fonear exponente_n(fonear raiz_n(e, raiz), exp - (raiz * factor));
 
-        tornachile 1 / ( fonear exponente_n ( e , factor ) * fraccionario ) ;
+        tornachile 1 / (fonear exponente_n(e , factor) * fraccionario);
     }
 }
 
-acabalado servicio = 80 ;
-acabalado comida = 80 ;
+acabalado servicio = 80;
+acabalado comida = 80;
 
-acabalado baja = 0 ;
-acabalado media = 10 ;
-acabalado alta = 30 ;
+acabalado baja = 0;
+acabalado media = 10;
+acabalado alta = 30;
 
-mochao s_pobre = fonear tri_mf ( servicio , -1 , 25 , 50 ) ;
-mochao s_aceptable = fonear tri_mf ( servicio , 25 , 50 , 75 ) ;
-mochao s_bueno = fonear tri_mf ( servicio , 50 , 75 , 101 ) ;
+mochao s_pobre = fonear tri_mf(servicio, -1, 25, 50);
+mochao s_aceptable = fonear tri_mf(servicio, 25, 50, 75);
+mochao s_bueno = fonear tri_mf(servicio, 50, 75, 101);
 
-mochao c_mala = fonear gauss_mf ( comida , 15 , 25 ) ;
-mochao c_buena = fonear gauss_mf ( comida , 15 , 50 ) ;
-mochao c_excelente = fonear gauss_mf ( comida , 30 , 100 ) ;
+mochao c_mala = fonear gauss_mf(comida, 15, 25);
+mochao c_buena = fonear gauss_mf(comida, 15, 50);
+mochao c_excelente = fonear gauss_mf(comida, 30, 100);
 
-mochao r1 = fonear min ( s_pobre , c_mala ) ;
-mochao r2 = fonear min ( s_aceptable , c_mala ) ;
-mochao r3 = fonear min ( s_bueno , c_mala ) ;
-mochao r4 = fonear min ( s_pobre , c_buena ) ;
-mochao r5 = fonear min ( s_pobre , c_mala ) ;
-mochao r6 = fonear min ( s_bueno , c_excelente ) ;
-mochao r7 = fonear min ( s_pobre , c_excelente ) ;
+mochao r1 = fonear min(s_pobre, c_mala);
+mochao r2 = fonear min(s_aceptable, c_mala);
+mochao r3 = fonear min(s_bueno, c_mala);
+mochao r4 = fonear min(s_pobre, c_buena);
+mochao r5 = fonear min(s_pobre, c_mala);
+mochao r6 = fonear min(s_bueno, c_excelente);
+mochao r7 = fonear min(s_pobre, c_excelente);
 
-mochao baja_ag = fonear max ( fonear max ( r1 , r2 ) , r4 ) ;
-mochao media_ag = fonear max ( fonear max ( r3 , r5 ) , r7 ) ;
-mochao alta_ag = r6 ;
+mochao baja_ag = fonear max(fonear max(r1, r2), r4);
+mochao media_ag = fonear max(fonear max(r3, r5), r7);
+mochao alta_ag = r6;
 
-mochao num = ( baja * baja_ag ) + ( media * media_ag ) + ( alta * alta_ag ) ;
-mochao den = baja_ag + media_ag + alta_ag ;
+mochao num = (baja * baja_ag) + (media * media_ag) + (alta * alta_ag);
+mochao den = baja_ag + media_ag + alta_ag;
 
-disir ( num / den ) ;
+disir (num / den);

@@ -18,6 +18,8 @@ for token in tokenized:
     else:
         if token[0] in RESERVED_TOKENS:
             token[1] = token[0]
+        elif token[1] == "operando":
+            raise RuntimeError(f"Unrecognized operand: {token[0]}")
 
 #Validate grammar then proceed to execute command
 if grammar_read.is_valid(tokenized):
