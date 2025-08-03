@@ -1,0 +1,16 @@
+traigase el "examples/matematicas.rj";
+
+patodos(i, i < 20, ++){
+    dizque(fonear modulo(i, 15) == 0) tonces{
+        disir("fizzbuzz");
+    }
+    perosi(fonear modulo(i, 5) == 0) tonces{
+        disir("buzz");
+    }
+    perosi(fonear modulo(i, 3) == 0) tonces{
+        disir("fizz");
+    }
+    pasino{
+        disir(i);
+    }
+}

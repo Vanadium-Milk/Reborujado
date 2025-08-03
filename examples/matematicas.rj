@@ -1,0 +1,104 @@
+chamba mochao absoluto(mochao num) {
+    dizque (num < 0) tonces {
+        tornachile num * -1;
+    }
+    pasino {
+        tornachile num;
+    }
+}
+
+chamba mochao min(mochao a ,mochao b){
+    dizque (a < b) tonces {
+        tornachile a ;
+    }
+    pasino{
+        tornachile b;
+    }
+}
+
+chamba acabalado piso(mochao num){
+    tornachile num;
+}
+
+chamba mochao max(mochao a ,mochao b){
+    dizque (a > b) tonces {
+        tornachile a;
+    }
+    pasino{
+        tornachile b;
+    }
+}
+
+chamba acabalado modulo (acabalado a, acabalado b) {
+    b = fonear absoluto(b);
+    a = fonear absoluto (a);
+
+    tornachile a -(fonear piso(a / b) * b);
+}
+
+chamba acabalado com_divisor (acabalado num, acabalado den){
+    ondes (den != 0) {
+        acabalado anterior = den;
+        den = fonear modulo(num, den);
+        num = anterior;
+    }
+
+    tornachile num;
+}
+
+chamba mochao exponente_n(mochao num, acabalado exp){
+    mochao res = num;
+    siono negativo = nosierto;
+    
+    dizque (exp == 0) tonces {
+        tornachile 1;
+    }
+    perosi (exp < 0) tonces{
+        negativo = sicierto;
+        exp = 0 - exp;
+    }
+    patodos (i, i < exp - 1, ++){
+        res = res*num;
+    }
+    
+    dizque (negativo) tonces {
+        tornachile 1 / res;
+    }
+    pasino {
+        tornachile res;
+    }
+}
+
+chamba mochao raiz_n(mochao num, mochao raiz){
+    dizque (raiz == 1) tonces {
+        tornachile num;
+    }
+
+    mochao bajo = 1;
+    mochao alto = num;
+    mochao medio = 0;
+
+    ondes (bajo <= alto){
+        medio = (bajo + alto) / 2;
+        mochao x = medio;
+
+        acabalado contar = 1;
+        hacer {
+            x = x * medio;
+            contar = contar + 1;
+        }
+        ondes ((x <= num) aparte (contar < raiz))
+
+        dizque ((x <= num + 0.001) aparte (x >= num - 0.001)) tonces {
+            tornachile medio;
+        }
+        perosi (x > num) tonces{
+            alto = medio;
+        }
+        pasino{
+            bajo = medio;
+        }
+    }
+
+    tornachile -1;
+}

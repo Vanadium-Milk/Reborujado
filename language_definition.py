@@ -24,7 +24,7 @@ def decompose_block(tokens: list[list[str]], prod: int) -> tuple[list, list]:
     return [cond for cond in sub_grammars if not cond in sentences], sentences
 
 #If
-def conditional (tokens: list[list[str]]):
+def conditional(tokens: list[list[str]]):
     cond_exp, sub_blocks = decompose_block(tokens, 45)
 
     #Support multiple elif declarations by iterating
@@ -33,7 +33,7 @@ def conditional (tokens: list[list[str]]):
             return interpreter.execute_locally(interpreter.extract_functions(sub_blocks[i]))
 
 #While
-def while_loop (tokens: list[list[str]]):
+def while_loop(tokens: list[list[str]]):
     cond_exp, sub_blocks = decompose_block(tokens, 58)
 
     functions = interpreter.extract_functions(sub_blocks[0])
@@ -44,7 +44,7 @@ def while_loop (tokens: list[list[str]]):
             return res
 
 #Do-wile
-def do_while_loop (tokens: list[list[str]]):
+def do_while_loop(tokens: list[list[str]]):
     cond_exp, sub_blocks = decompose_block(tokens, 59)
 
     functions = interpreter.extract_functions(sub_blocks[0])
@@ -55,7 +55,7 @@ def do_while_loop (tokens: list[list[str]]):
             break
 
 #Match
-def switch (tokens: list[list[str]]):
+def switch(tokens: list[list[str]]):
     cond_exp, sub_blocks = decompose_block(tokens, 50)
 
     condition = interpreter.reduce_expresion(cond_exp[0])
@@ -70,7 +70,7 @@ def switch (tokens: list[list[str]]):
             
             break
 
-def call_function (tokens: list[list[str]]):
+def call_function(tokens: list[list[str]]):
     args_block = tokens[3:-1]
 
     if len(args_block) > 0:
@@ -102,7 +102,7 @@ def define_function(tokens: list[list[str]]):
     interpreter.define_function(id, parameters, functions, return_type)
 
 #For
-def for_loop (tokens: list[list[str]]):
+def for_loop(tokens: list[list[str]]):
     exps, sub_blocks = decompose_block(tokens, 55)
     
     #Create a temporal variable for the iterator
@@ -127,6 +127,14 @@ def for_loop (tokens: list[list[str]]):
         
         iterations += increment
         iterator[iter_id].assign_value(acabalado(iterations))
+
+def import_file(tokens: list[list[str]]):
+    file_name = tokens[-1][0][1:-1]
+    
+    function_list = callables_from_file(file_name)
+
+    for func in function_list:
+        func()
 
 def return_val(tokens: list[list[str]]):
     return interpreter.reduce_expresion(tokens[1:])
@@ -199,8 +207,8 @@ RESERVED_TOKENS = {
     "id": 8,
     "fonear": 9,
     "chamba": 10,
-    "/*": 11,
-    "comentario": 12,
+    "comentario": 11,
+    "traigase": 12,
     ";": 13,
     "entero": 14,
     "flotante": 15,
@@ -238,6 +246,7 @@ RESERVED_TOKENS = {
     "tonces": None,
     "{": None,
     "=": None,
+    "el": None
 }
 
 token_reader = ad.deterministic_automata(
@@ -326,15 +335,16 @@ grammar_read = gi.push_down_automata({
         "PRINT": 30,
         "ARITMETICA": 31,
         "RELACIONAL": 32,
-        "TIPORETORNO": 33
+        "TIPORETORNO": 33,
+        "IMPORTAR": 34
     },
     RESERVED_TOKENS,
     [
         ["EMPEZAR"], #0
         ["SENTENCIA"], #1
         ["COMENTARIO"], #2
-        ["/*", "ANY", "*/", "EMPEZAR"], #3
-        ["comentario", "EMPEZAR"], #4
+        ["comentario", "EMPEZAR"], #3
+        ["IMPORTAR", ";", "EMPEZAR"], #4
         ["DECLARACION", ";", "EMPEZAR"], #5
         ["IF", "EMPEZAR"], #6
         ["WHILE", "EMPEZAR"], #7
@@ -412,12 +422,12 @@ grammar_read = gi.push_down_automata({
         ["COMPARACION"], #79
         ["DATO"], #80
         ["nomas"], #81
-        ["traigase", "archivo"]
+        ["traigase", "el", "cadena"] #82
     ],
     [
-        [1,1,1,1,1,1,1,1,1,1,1,2,2,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,71,None,None,1,None,1,None,None,1,None,71],
-        [None,None,None,None,None,None,None,None,None,None,None,3,4,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
-        [5,5,5,5,6,7,8,9,10,11,12,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,70,None,74,None,None,73,None,None],
+        [1,1,1,1,1,1,1,1,1,1,1,2,1,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,71,None,None,1,None,1,None,None,1,None,71],
+        [None,None,None,None,None,None,None,None,None,None,None,3,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
+        [5,5,5,5,6,7,8,9,10,11,12,None,4,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,70,None,74,None,None,73,None,None],
         [13,13,13,13,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
         [14,15,16,17,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
         [None,None,None,None,None,None,None,None,19,None,None,None,None,18,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,18],
@@ -449,12 +459,13 @@ grammar_read = gi.push_down_automata({
         [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,31,32,33,34,35,36,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
         [None,None,None,None,None,None,None,None,None,None,None,None,None,79,None,None,None,None,None,None,None,None,None,None,None,None,None,79,79,79,79,79,79,79,None,None,None,None,None,None,79,None,None,None,None,None,79],
         [80,80,80,80,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None, 81,None],
+        [None,None,None,None,None,None,None,None,None,None,None,None,82,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None],
     ]
 )
 
 interpreter = si.semantics_interpreter(
     grammar_read,
-    {45,58,59,60,50,20,69,55,13,77,72},
+    {45,58,59,60,50,20,69,55,13,77,72,82},
     {38,39,40,41,42,43,31,32,33,34,35,36,21,22,23,24,25,26,27,28},
     {
         "dizque": conditional,
@@ -471,6 +482,7 @@ interpreter = si.semantics_interpreter(
         "disir": output,
         "id": assign,
         "tornachile": return_val,
+        "traigase": import_file,
         "+": sum,
         "-": subtract,
         "*": multiply,
@@ -503,3 +515,24 @@ interpreter = si.semantics_interpreter(
         "nomas": None
     }
 )
+
+def callables_from_file(input_file: str) -> list[FunctionType]:
+    tokenized = token_reader.tokenize(open(input_file, "r").read(), [" ", "\n"])
+
+    #Change tokens marked as "reserved tokens" to their actual reserved word
+    for token in tokenized:
+
+        if token[1] == "no reconocido":
+            raise RuntimeError(f"Error: {token[0]} is not recognized")
+            
+        else:
+            if token[0] in RESERVED_TOKENS:
+                token[1] = token[0]
+            elif token[1] == "operando":
+                raise RuntimeError(f"Unrecognized operand: {token[0]}")
+
+    #Validate grammar then proceed to execute command
+    if grammar_read.is_valid(tokenized):
+        return interpreter.extract_functions(tokenized)
+    else:
+        raise RuntimeError("File_contains errors")
