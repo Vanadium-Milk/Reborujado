@@ -4,6 +4,7 @@ from time import perf_counter
 #File with rover commands
 input_file = input("Select a file to interpret: ")
 
+#Measure execution time
 start = perf_counter()
 
 for func in callables_from_file(input_file):

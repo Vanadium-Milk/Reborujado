@@ -28,9 +28,17 @@ class push_down_automata:
             return self.matrix[state][terminal]
     
     def __traverse_productions (self, curr_prod: int, data: list[list[str]], write_cache: bool = False) -> int:
-        token = 0
-        hashable = tuple([t[1] for t in data])
+        '''
+        Use predictive method to recursively travel the grammars according to the provided tokens (data), then return the
+        index of the last token inside the given production (curr_prod), when the production is 0 traverse the whole
+        grammar as a tree.
+        '''
 
+        #Counter variable
+        token = 0
+
+        #Caching the traversed productions
+        hashable = tuple([t[1] for t in data])
         if not write_cache and hashable in self.__traversal_cache:
             prods = self.__traversal_cache[hashable]
             if curr_prod in prods:
@@ -123,11 +131,22 @@ class push_down_automata:
             return data[index][1]
 
     def is_valid(self, tokens: list[list[str]]) -> bool:
-        res = self.__traverse_productions(0,tokens, True)
-
+        '''
+        Return true if the provided token list fit the defined grammar according to the predictive method
+        '''
+        try:
+            res = self.__traverse_productions(0,tokens, True)
+        
+        except Exception as ex:
+            print(ex.args)
+            return False
+        
         return not res is None
     
     def get_groups(self, tokens: list[list[str]], start_prod: int, prod_groups: set[int], recursive: bool = True) -> list[list[list[str]]]:
+        '''
+        Get a list containing ocurrences of selected productions (prod_groups) in the tokens list
+        '''
         a, res = self.__group_tokens(start_prod, start_prod, 0, tokens, prod_groups, recursive)
 
         if isinstance(res, list):

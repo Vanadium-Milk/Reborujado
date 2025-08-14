@@ -55,7 +55,7 @@ class deterministic_automata:
 
             #The token is not a valid expression
             elif next in self.failed_terminals:
-                raise RuntimeError(f"{read + char + "..."} is a {self.failed_terminals[next]}")
+                raise RuntimeError(f"{read + char}... is a {self.failed_terminals[next]}")
             else:
                 state = next
             

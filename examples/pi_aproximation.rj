@@ -1,0 +1,11 @@
+mochao res = 3;
+acabalado flip = 1;
+acabalado div = 2;
+
+patodos(i, i < 100000, ++){
+    res = res + (flip * (4 / (div * (div + 1) * (div + 2))));
+    flip = flip * -1;
+    div = div + 2;
+}
+
+disir(res);

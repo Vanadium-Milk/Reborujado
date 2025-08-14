@@ -3,6 +3,7 @@ import grammar_interpreter as gi
 import semantic_interpreter as si
 from data_types import *
 
+#Interpreter functions
 #Return the value resulting from the expression pressent in the tokens
 def get_exp_values(tokens: list[list[str]], production: int):
     value_exp = grammar_read.get_groups(tokens, production, {76})
@@ -23,7 +24,9 @@ def decompose_block(tokens: list[list[str]], prod: int) -> tuple[list, list]:
 
     return [cond for cond in sub_grammars if not cond in sentences], sentences
 
-#If
+
+#Langauge sentences -----------------------------------------------------
+#If (dizque)
 def conditional(tokens: list[list[str]]):
     cond_exp, sub_blocks = decompose_block(tokens, 45)
 
@@ -32,7 +35,7 @@ def conditional(tokens: list[list[str]]):
         if i >= len(cond_exp) or siono(interpreter.reduce_expresion(cond_exp[i])).val:
             return interpreter.execute_locally(interpreter.extract_functions(sub_blocks[i]))
 
-#While
+#While (ondes)
 def while_loop(tokens: list[list[str]]):
     cond_exp, sub_blocks = decompose_block(tokens, 58)
 
@@ -43,7 +46,7 @@ def while_loop(tokens: list[list[str]]):
         if res:
             return res
 
-#Do-wile
+#Do-wile (hacer-ondes)
 def do_while_loop(tokens: list[list[str]]):
     cond_exp, sub_blocks = decompose_block(tokens, 59)
 
@@ -54,7 +57,7 @@ def do_while_loop(tokens: list[list[str]]):
         if not siono(interpreter.reduce_expresion(cond_exp[0])).val:
             break
 
-#Match
+#Match (chequear)
 def switch(tokens: list[list[str]]):
     cond_exp, sub_blocks = decompose_block(tokens, 50)
 
@@ -70,6 +73,7 @@ def switch(tokens: list[list[str]]):
             
             break
 
+#call (fonear)
 def call_function(tokens: list[list[str]]):
     args_block = tokens[3:-1]
 
@@ -81,6 +85,7 @@ def call_function(tokens: list[list[str]]):
 
     return interpreter.call_function(tokens[1][0], arguments)
 
+#function (chamba)
 def define_function(tokens: list[list[str]]):
     id = tokens[2][0]
     function_block = grammar_read.get_groups(tokens, 60, {75}, False)[0]
@@ -101,7 +106,7 @@ def define_function(tokens: list[list[str]]):
 
     interpreter.define_function(id, parameters, functions, return_type)
 
-#For
+#For (patodos)
 def for_loop(tokens: list[list[str]]):
     exps, sub_blocks = decompose_block(tokens, 55)
     
@@ -128,6 +133,7 @@ def for_loop(tokens: list[list[str]]):
         iterations += increment
         iterator[iter_id].assign_value(acabalado(iterations))
 
+#import (traigase el)
 def import_file(tokens: list[list[str]]):
     file_name = tokens[-1][0][1:-1]
     
@@ -136,28 +142,35 @@ def import_file(tokens: list[list[str]]):
     for func in function_list:
         func()
 
+#return (tornachile)
 def return_val(tokens: list[list[str]]):
     return interpreter.reduce_expresion(tokens[1:])
 
+#id = value
 def assign(tokens: list[list[str]]):
     interpreter.modify_variable(tokens[0][0], get_exp_values(tokens, 20))
 
+#acabalado id
 def define_int(tokens: list[list[str]]) -> None:
     var_from_tokens(tokens, acabalado)
 
+#mecate id
 def define_string(tokens: list[list[str]]) -> None:
     var_from_tokens(tokens, mecate)
 
+#mochao id
 def define_float(tokens: list[list[str]]) -> None:
     var_from_tokens(tokens, mochao)
 
+#siono id
 def define_bool(tokens: list[list[str]]) -> None:
     var_from_tokens(tokens, siono)
 
+#disir
 def output(tokens: list[list[str]]):
     print(get_exp_values(tokens, 77).val)
 
-#Operands
+#Operands ------------------------------------
 def sum(a: data_type, b: data_type):
     return a.sum(b)
 
@@ -465,6 +478,7 @@ grammar_read = gi.push_down_automata({
 
 interpreter = si.semantics_interpreter(
     grammar_read,
+    #Productions that represent actions or commands that will be mapped as callables
     {45,58,59,60,50,20,69,55,13,77,72,82},
     {38,39,40,41,42,43,31,32,33,34,35,36,21,22,23,24,25,26,27,28},
     {
@@ -516,12 +530,12 @@ interpreter = si.semantics_interpreter(
     }
 )
 
+#Extract functions from .rj files and pass them as a list of callables
 def callables_from_file(input_file: str) -> list[FunctionType]:
     tokenized = token_reader.tokenize(open(input_file, "r").read(), [" ", "\n"])
 
     #Change tokens marked as "reserved tokens" to their actual reserved word
     for token in tokenized:
-
         if token[1] == "no reconocido":
             raise RuntimeError(f"Error: {token[0]} is not recognized")
             
